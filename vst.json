@@ -1,0 +1,72 @@
+{
+  "name": "RMXXXL",
+  "vendor": "ANDREALPHEUS",
+  "uid": "AnRx",
+  "version": 1101,
+  "so": "rmxxxl.so",
+  "params": "params.json",
+  "effect": true,
+  "defines": {
+    "HAS_LFO_BPM": 1,
+    "HAS_DISPLAY_REV": 1,
+    "MODULE_DIR": "\"/sdcard/RMXXXL Samples\""
+  },
+  "build": {
+    "root": ".",
+    "sources": [
+      "src/engine.cc",
+      "src/midi_in.cc",
+      "src/samples.cc",
+      "src/rv_plate.cc",
+      "src/rv_room.cc",
+      "src/rv_hall.cc",
+      "third_party/parasites/clouds/dsp/correlator.cc",
+      "third_party/parasites/clouds/dsp/granular_processor.cc",
+      "third_party/parasites/clouds/dsp/mu_law.cc",
+      "third_party/parasites/clouds/dsp/pvoc/frame_transformation.cc",
+      "third_party/parasites/clouds/dsp/pvoc/phase_vocoder.cc",
+      "third_party/parasites/clouds/dsp/pvoc/stft.cc",
+      "third_party/parasites/clouds/resources.cc",
+      "third_party/parasites/stmlib/dsp/atan.cc",
+      "third_party/parasites/stmlib/dsp/units.cc",
+      "third_party/parasites/stmlib/utils/random.cc",
+      "third_party/dragonfly/common/freeverb/allpass.cpp",
+      "third_party/dragonfly/common/freeverb/biquad.cpp",
+      "third_party/dragonfly/common/freeverb/comb.cpp",
+      "third_party/dragonfly/common/freeverb/delay.cpp",
+      "third_party/dragonfly/common/freeverb/delayline.cpp",
+      "third_party/dragonfly/common/freeverb/earlyref.cpp",
+      "third_party/dragonfly/common/freeverb/efilter.cpp",
+      "third_party/dragonfly/common/freeverb/nrev.cpp",
+      "third_party/dragonfly/common/freeverb/nrevb.cpp",
+      "third_party/dragonfly/common/freeverb/progenitor.cpp",
+      "third_party/dragonfly/common/freeverb/progenitor2.cpp",
+      "third_party/dragonfly/common/freeverb/revbase.cpp",
+      "third_party/dragonfly/common/freeverb/slot.cpp",
+      "third_party/dragonfly/common/freeverb/strev.cpp",
+      "third_party/dragonfly/common/freeverb/utils.cpp",
+      "third_party/dragonfly/common/freeverb/zrev.cpp",
+      "third_party/dragonfly/common/freeverb/zrev2.cpp"
+    ],
+    "cflags": [
+      "-D_FILE_OFFSET_BITS=64",
+      "-DTEST",
+      "-DLIBFV3_FLOAT",
+      "-Isrc",
+      "-Ithird_party/parasites",
+      "-Ithird_party/dragonfly/common",
+      "-Ithird_party/dragonfly/shim",
+      "-Wno-unused-parameter",
+      "-Wno-narrowing",
+      "-Wno-deprecated",
+      "-Wno-infinite-recursion",
+      "-Wno-unused-local-typedefs"
+    ],
+    "libs": [
+      "-lm",
+      "-ldl",
+      "-lpthread"
+    ]
+  },
+  "layout": "layout.conf"
+}

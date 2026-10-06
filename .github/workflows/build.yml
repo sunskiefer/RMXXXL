@@ -1,0 +1,59 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Tools
+        run: pip install ziglang pillow
+
+      - name: Tests (x86, ASan + UBSan)
+        run: test/run_tests.sh
+
+      - name: Build (armv7, glibc 2.31)
+        run: ./build.sh
+
+      - name: Package
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          case "$GITHUB_REF" in refs/tags/v*) ;; *) VERSION="0.0.0-dev" ;; esac
+          python3 third_party/mpc-vst-plugins/tools/release.py \
+            --so build/arm/rmxxxl.so \
+            --skin "build/skin/ANDREALPHEUS - VST - RMXXXL" \
+            --entry build/pluginlist-entry.xml \
+            --version "$VERSION" \
+            --about "RMXXXL v.1 by ANDREALPHEUS: RMX-style remix FX for MPC OS" \
+            -o dist
+
+      - name: Mark as not yet hardware-tested
+        # Remove this step once a release has been installed and played on a Force.
+        run: |
+          cd dist && Z=$(ls *.zip) && D="${Z%-mpc-armv7.zip}" && unzip -q "$Z" && rm "$Z"
+          sed -i 's|^- Tested on MPC OS with a Force\. |- **Not yet tested on hardware** (built and tested offline only). Report problems on https://github.com/sunskiefer/RMXXXL/issues. |' "$D/INSTALL.md"
+          (cd "$D" && sed -i "/ INSTALL.md$/d" SHA256SUMS && sha256sum INSTALL.md >> SHA256SUMS && sha256sum -c --quiet SHA256SUMS)
+          zip -qr "$Z" "$D" && rm -rf "$D"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RMXXXL-mpc-armv7
+          path: dist/*.zip
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+          body_path: CHANGELOG.md

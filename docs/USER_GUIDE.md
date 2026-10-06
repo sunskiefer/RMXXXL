@@ -1,0 +1,295 @@
+# RMXXXL v.1 — User Guide
+
+## What RMXXXL is
+
+RMXXXL v.1 by ANDREALPHEUS is a performance remix effect in the spirit of the Pioneer RMX-1000. It runs as **one native insert effect** inside MPC OS on first-generation standalone hardware: Akai Force, MPC Live / Live II, One, X and Key 61.
+
+Put it on a track, a submix or the master, and play the mix live with big macro moves: build-ups, breakdowns, filter sweeps, band kills, echoes, reverb washes, granular textures, drum and sample hits and a release button that snaps everything back.
+
+Status: version 1.1.1 passes its offline tests (x86 and the ARM build under emulation). It has not yet been verified on real hardware, and CPU load on a Gen1 unit is not measured yet.
+
+**Signal flow**, in order:
+
+1. **In Gain**: trims the incoming signal.
+2. **Isolator**: 3-band kill EQ (Low / Mid / High), Linkwitz-Riley 8th order, as in Mixxx.
+3. **Filter**: one bipolar knob, low-pass to the left and high-pass to the right, with resonance, as in Mixxx.
+4. **Clouds**: the Mutable Instruments Clouds granular processor with the Parasites firmware, six modes.
+5. **Echo**: tempo-synced, plus the noise riser used by Build Up.
+6. **Reverb**: Dragonfly Plate, Room or Hall, or Clouds' own reverb.
+7. **Release tape**: Echo Out, Vinyl Brake or Backspin.
+8. **Pads**: four pads (built-in drums or your samples), each with its own ADSR, played over the top.
+9. **Brickwall limiter**: Drive in, Ceiling out.
+
+**Scene FX** are the heart of it. **Build Up** raises a high-pass filter, feeds the echo and reverb and brings in a noise riser. **Break Down** closes a low-pass filter and washes the sound into echo and reverb. One knob each moves all of those at once.
+
+The plugin has five pages: **REMIX** (the performance page), **CLOUDS**, **REVERB / PADS**, **PADS** and **SETUP**. It follows the MPC's tempo, and saves and recalls all settings with the project.
+
+## Installation
+
+Installing takes one script run over SSH. The script stops MPC, backs up its settings, installs the plugin and starts MPC again.
+
+**Requirements**
+
+- A first-generation MPC OS standalone unit: Force, MPC Live / Live II, One, X or Key 61. The installer refuses anything else.
+- MPC OS 3.x. The screen skin uses the 3.x format; MPC OS 2.x is not supported.
+- Root SSH access to the device. Stock MPC OS doesn't offer this, so you need a modded unit (for example MockbaMod).
+- The release file `RMXXXL-<version>-mpc-armv7.zip` from the repository's Releases.
+
+Installing plugins this way is unofficial. Back up your projects first.
+
+**Install**
+
+1. Save your project on the device.
+2. Unzip `RMXXXL-<version>-mpc-armv7.zip` on your computer. You get a folder `RMXXXL-<version>`.
+3. Copy the folder to the device: `scp -r RMXXXL-<version> root@<device-ip>:/tmp/`
+4. Run the installer: `ssh -t root@<device-ip> sh /tmp/RMXXXL-<version>/install.sh`
+5. Confirm when it asks. It stops MPC, copies the plugin folder `ANDREALPHEUS - VST - RMXXXL` into `/sdcard/Synths`, backs up `MPC.settings`, adds the plugin to MPC's plugin list and starts MPC again.
+6. On the device, open a track's insert effects and load **RMXXXL** (manufacturer **ANDREALPHEUS**).
+
+Installer options: `-y` skips the confirmation prompt, and `-t <folder>` installs into another Synths folder, for example on a card.
+
+**Update**: run the newer version's `install.sh` the same way. It upgrades in place.
+
+**Uninstall**: `ssh -t root@<device-ip> sh /tmp/RMXXXL-<version>/uninstall.sh` removes the plugin folder and its plugin-list entry, then restarts MPC.
+
+## Controls, page by page
+
+Each page has a top row and a bottom row of controls. Turn knobs on the touchscreen or with the Q-Links; tap buttons and option lists.
+
+![REMIX](img/remix.png)
+
+### REMIX (performance page)
+
+| Control | What it does |
+| --- | --- |
+| Build Up | Scene macro: raises a high-pass filter (up to Build HPF), adds echo, reverb and the noise riser |
+| Break Down | Scene macro: closes a low-pass filter (down to Break LPF), adds echo and reverb |
+| Filter | Centre = off. Left = low-pass sweeping down, right = high-pass sweeping up |
+| Resonance | Filter resonance, Q 0.4 to 4 (automatically limited when both filters are close) |
+| Echo | Echo send amount |
+| Echo Beat | Echo time: 1/16, 1/8, 3/16, 1/4, 3/8, 1/2, 3/4 or 1 bar, following the MPC tempo |
+| Reverb | Reverb send amount (type and character are set on the REVERB page) |
+| Release | Fires the selected Release FX |
+| Low / Mid / High | Isolator bands. Fully left = Kill, centre = unchanged, fully right = +6 dB |
+| Release FX | Echo Out (repeats the last echo beat and fades), Brake (vinyl stop) or Backspin |
+| Beats | Release length: 1/2, 1, 2 or 4 beats |
+| Feedback | Echo feedback; Build Up and Break Down add more on top |
+| Noise | How much noise riser Build Up brings in |
+| Ceiling | Limiter ceiling: the output never goes above this level |
+
+After **Release**, Build Up and Break Down are latched off, like the RMX snapping back to dry. Turn both knobs back to zero to re-arm them.
+
+### CLOUDS
+
+![CLOUDS](img/clouds.png)
+
+| Control | What it does |
+| --- | --- |
+| Clouds | Switches the Clouds processor on or off (with a short crossfade) |
+| Mode | Granular, Stretch, Loop Delay (default), Spectral, Oliverb or Resonestor. A change takes effect within 0.5 s |
+| Position, Size, Pitch, Density, Texture | The module's main controls. Their names on the Q-Link display change per mode, as on the module |
+| Blend | Clouds dry/wet |
+| Spread, Feedback, Cloud Verb | Stereo spread, feedback and Clouds' own reverb |
+| Freeze, Reverse | Freeze the buffer; play grains reversed |
+| Quality | 16-bit or 8-bit, stereo or mono (lower quality = longer buffer, grittier sound) |
+| Trigger | Fires a grain or clock, depending on the mode |
+| Scene Depth | How much Build Up and Break Down push Clouds' blend and feedback |
+
+### REVERB / PADS
+
+![REVERB / PADS](img/reverb-pads.png)
+
+| Control | What it does |
+| --- | --- |
+| Type | Plate, Room or Hall (Dragonfly), or Clouds (Clouds' built-in reverb, lightest on CPU) |
+| Reverb | Send amount (same control as on REMIX) |
+| Decay | 0.1 to 10 s |
+| Size | Room and Hall: room size in metres. Plate: small tank, plate or large tank |
+| Tone | High-frequency cut, 1 to 16 kHz |
+| Predelay, Width | Predelay 0 to 100 ms; stereo width 50 to 150 % |
+| Scene Depth | How much Build Up and Break Down add reverb |
+| Pad 1, Pad 2, Pad 3, Pad 4 | Pad hits from the screen (same as the PADS page) |
+| Pad Level, Pad Tune | Pad volume; pitch ±12 semitones |
+| Roll Beat | Roll speed: 1/8, 1/8T, 1/16, 1/16T, 1/32 |
+| MIDI Root | The first note of the MIDI map (see MIDI setup) |
+
+The reverb keeps running for 12 seconds after its send closes, so tails ring out naturally. Switching type fades the old reverb out and the new one in.
+
+### PADS
+
+![PADS](img/pads.png)
+
+The PADS page plays the four pads from the screen and shapes each one. Every pad keeps its own sound and envelope; the controls in the lower half always show the pad selected in **Edit Pad**.
+
+| Control | What it does |
+| --- | --- |
+| Pads 1–4 | Play the pad. Tapping a pad also selects it for editing, as on the MPC |
+| Roll 1–4 | Latching roll: the pad repeats at the Roll Beat until you switch it off |
+| Edit Pad | Which pad the controls below show and change |
+| Sound | BUILT-IN (the pad's own drum: 1 kick, 2 snare, 3 clap, 4 hat) or SLOT 1–16, a sample from the samples folder |
+| Reload | Re-reads the samples folder after you add, remove or rename files |
+| Attack | 0 to 2 s |
+| Decay | 0 to 4 s, falling to the Sustain level |
+| Sustain | 0 to 100 %: the level held after the Decay |
+| Release | 0 to 4 s: fades out the end of the sound |
+| Loaded Sound | Shows what the selected pad plays, for example PAD 2: 808 Snare.wav, or SLOT 5 EMPTY |
+| Roll Beat | Roll speed for latches and held MIDI roll notes |
+
+Pads play **one-shot**, like MPC drum programs: a quick tap or MIDI note never cuts the sound short. Attack rises, Decay falls to Sustain, and Release starts so that it fades the sound out by its natural end.
+
+### Samples (swapping the one-shots)
+
+Each pad can play its built-in drum or one of 16 sample slots. The slots are the `.wav` files in the folder **/sdcard/RMXXXL Samples** on the device, sorted by file name: the first file is SLOT 1, the second SLOT 2 and so on.
+
+1. Copy WAV files into `/sdcard/RMXXXL Samples`, for example `scp "My Kick.wav" "root@<device-ip>:/sdcard/RMXXXL Samples/"`. The folder is created the first time the plugin loads.
+2. To control the order, start the names with numbers: `01 Kick.wav`, `02 Snare.wav`.
+3. On the PADS page, tap **Reload**, pick a pad with **Edit Pad**, and choose its slot under **Sound**.
+
+Supported: WAV, 8/16/24/32-bit or 32-bit float, mono or stereo, any sample rate, up to 10 seconds each (longer files are cut). The folder is outside the plugin folder, so your samples survive plugin updates and reinstalls.
+
+### SETUP
+
+![SETUP](img/setup.png)
+
+| Control | What it does |
+| --- | --- |
+| Limit Drive | Pushes the signal into the limiter, 0 to +18 dB |
+| Ceiling | Output ceiling, −12 to 0 dB (default −0.3 dB) |
+| Release | Limiter recovery time, 10 to 500 ms |
+| In Gain | Input trim, −18 to +6 dB |
+| Low Xover, High Xover | Isolator crossover points (defaults 246 Hz and 2.48 kHz, as in Mixxx) |
+| Build HPF, Break LPF | How far the Build Up high-pass and the Break Down low-pass go |
+
+The limiter looks 1.45 ms ahead, so it catches peaks cleanly. That adds 1.45 ms of latency, far below anything you'd hear as a timing shift.
+
+## MIDI setup
+
+To play the pads, rolls and Release from the Force's pads or a sequence, send MIDI from a MIDI track to the plugin's own MIDI input.
+
+MPC OS sends no MIDI to insert effects. So every RMXXXL instance opens its own MIDI input port, named **RMXXXL 1**, **RMXXXL 2** and so on. MPC detects it without a restart.
+
+**Set it up**
+
+1. Insert RMXXXL on the track (or master) you want to effect.
+2. Create a MIDI track.
+3. Set that MIDI track's MIDI output to **RMXXXL 1**.
+4. Play the pads or program a pattern on the MIDI track.
+
+Ports are numbered in the order instances open during an MPC session. If you remove the plugin and insert it again, it may come up as **RMXXXL 2**; pick the number that's in the list. After an MPC restart, numbering starts at 1 again.
+
+**Note map**
+
+Notes count up from **MIDI Root** (REVERB / PADS page, default 36 = C1 in MPC numbering, where note 60 = C3).
+
+| Note (default) | Offset from root | Action |
+| --- | --- | --- |
+| 36 (C1) | +0 | Pad 1 |
+| 37 (C#1) | +1 | Pad 2 |
+| 38 (D1) | +2 | Pad 3 |
+| 39 (D#1) | +3 | Pad 4 |
+| 40 (E1) | +4 | Pad 1 roll, while held |
+| 41 (F1) | +5 | Pad 2 roll, while held |
+| 42 (F#1) | +6 | Pad 3 roll, while held |
+| 43 (G1) | +7 | Pad 4 roll, while held |
+| 44 (G#1) | +8 | Release |
+
+Velocity sets the hit's level. Each pad plays its chosen sound (built-in drum or sample slot) one-shot, through its ADSR, so a short tap plays the whole sound. Rolls repeat at the **Roll Beat** rate and follow the MPC tempo.
+
+If your pads send different notes, change **MIDI Root** so the first pad you want lands on +0, rather than remapping the pads.
+
+## Q-Links
+
+RMXXXL comes with its Q-Links already mapped, so there's nothing to assign. Each page carries up to 16 controls: knobs 1–8 are the Force's first knob bank and 9–16 the second.
+
+MPC reads two kinds of map from the plugin:
+
+- **Screen mode**: the Q-Links follow the page on screen. Each page has its own set (tables below).
+- **Track / program mode**: one fixed set, whatever page is showing. RMXXXL uses the REMIX set for this, with Limit Drive in the last slot, so the performance controls stay under your hands.
+
+Which of the two you get depends on the Q-Link mode selected on the device. Choosing the mode is MPC's own setting, not part of the plugin.
+
+**REMIX**
+
+| Bank | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | Build Up | Break Down | Filter | Echo | Low | Mid | High | Reverb |
+| 2 | Resonance | Feedback | Echo Beat | Release FX | Beats | Noise | Ceiling | Limit Drive |
+
+**CLOUDS**
+
+| Bank | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | Position | Size | Pitch | Density | Texture | Blend | Feedback | Spread |
+| 2 | Cloud Verb | Scene Depth | Mode | Clouds on/off | Freeze | Reverse | Quality | — |
+
+**REVERB / PADS**
+
+| Bank | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | Reverb | Decay | Size | Tone | Predelay | Width | Scene Depth | Pad Level |
+| 2 | Type | Pad Tune | Roll Beat | MIDI Root | — | — | — | — |
+
+**PADS**
+
+| Bank | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | Attack | Decay | Sustain | Release | Edit Pad | Sound | Roll Beat | Pad Level |
+
+The ADSR Q-Links follow the selected pad, the same as the knobs on screen.
+
+**SETUP**
+
+| Bank | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | Limit Drive | Ceiling | Release | In Gain | Low Xover | High Xover | Build HPF | Break LPF |
+
+On knobs that pick from a list (Echo Beat, Release FX, Mode, Type and so on), each knob click moves one option.
+
+Release and the pad hits are deliberately not on Q-Links, because a knob turn would fire them over and over. Use the screen buttons or MIDI for those.
+
+The Q-Link display shows the control's name. On the CLOUDS page the names follow the selected mode, for example Size reads **Loop Size** in Loop Delay mode.
+
+## Troubleshooting
+
+Most problems come down to three things: MPC still running an old copy, the plugin list entry, or CPU load. Over SSH, the MPC log is your best friend:
+
+```
+journalctl -u acvs | tail -n 50
+```
+
+If your unit has no `acvs` service, use `inmusic-mpc` instead. A crash shows up as `code=dumped, status=11/SEGV`.
+
+| Problem | What to check |
+| --- | --- |
+| RMXXXL isn't in the plugin list | Re-run `install.sh` and read its output. Check the entry exists: `grep -c RMXXXL /media/az01-internal/Settings/MPC/MPC.settings` should print 1 or more |
+| MPC crashes when inserting it | Save the log above and open an issue with it. Then uninstall with `uninstall.sh` to get back to a working state |
+| Old screen or old behaviour after an update | MPC keeps skins in memory and keeps a plugin loaded while any instance exists, undo history included. Save, then restart MPC (the installer does this) |
+| Crackles, clicks or dropouts | CPU overload; see the CPU tips below |
+| No sound, or very quiet | Check Ceiling (SETUP), the isolator knobs (fully left = Kill), the Filter (far left or right nearly closes it) and In Gain |
+| Build Up / Break Down do nothing | They are latched off after a Release. Turn both to zero, then up again |
+| No RMXXXL port for the MIDI track | The plugin must be inserted first. Check for a higher number (RMXXXL 2); a restart resets the numbering |
+| Pads play the wrong sound | Set MIDI Root so your first pad lands on +0 (MIDI setup) |
+| Echo or rolls out of time | They follow the MPC tempo; check the project BPM |
+| Clouds mode change seems ignored | A mode or quality change applies within 0.5 s, by design |
+
+**Samples**
+
+- **Loaded Sound says SLOT n EMPTY**: there are fewer than n WAV files in `/sdcard/RMXXXL Samples`, or a file couldn't be read (not a WAV, or an unusual format). Check with `ls "/sdcard/RMXXXL Samples"`, then tap Reload.
+- **New files don't show up**: tap Reload on the PADS page. The slot order is by file name, so adding a file can shift the slots after it.
+- **A sample starts quietly or ends early**: check the pad's Attack and Release; with Sustain low, the Decay fades it while it plays.
+
+**CPU tips**, lightest changes first:
+
+1. Switch the reverb Type to **Clouds** or **Plate**. **Hall** is the heaviest.
+2. Turn **Clouds** off when you're not using it. When off it uses no processing.
+3. Avoid running several RMXXXL instances at once; one on the master usually does the job.
+4. Note that a reverb keeps running for 12 s after its send closes, so CPU drops a little later than the sound.
+
+**Restoring MPC's settings by hand**, only if something is badly wrong: stop MPC with `systemctl stop acvs`, copy back the `MPC.settings` backup the installer made (it prints the path), then `systemctl start acvs`.
+
+**What to include when reporting a problem** (open an issue on the repository):
+
+- The last 50 lines of the log.
+- Device and MPC OS version.
+- The page and settings in use: especially reverb Type, Clouds on or off, and Clouds mode.
+- What you heard or saw, for example "Backspin is too fast" or "crackles when Build Up passes halfway".

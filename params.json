@@ -1,0 +1,705 @@
+{
+  "name": "RMXXXL",
+  "params": [
+    {
+      "key": "build_up",
+      "name": "Build Up",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.0
+    },
+    {
+      "key": "break_down",
+      "name": "Break Down",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.0
+    },
+    {
+      "key": "filter",
+      "name": "Filter",
+      "min": -1.0,
+      "max": 1.0,
+      "default": 0.0,
+      "dynamic_display": true
+    },
+    {
+      "key": "filter_res",
+      "name": "Resonance",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.25,
+      "dynamic_display": true
+    },
+    {
+      "key": "echo_send",
+      "name": "Echo",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.0
+    },
+    {
+      "key": "echo_div",
+      "name": "Echo Beat",
+      "options": [
+        "1/16",
+        "1/8",
+        "3/16",
+        "1/4",
+        "3/8",
+        "1/2",
+        "3/4",
+        "1 Bar"
+      ],
+      "default": 3
+    },
+    {
+      "key": "release_fx",
+      "name": "Release FX",
+      "options": [
+        "Echo Out",
+        "Vinyl Brake",
+        "Backspin"
+      ],
+      "default": 1
+    },
+    {
+      "key": "release",
+      "name": "Release",
+      "min": 0.0,
+      "max": 1.0,
+      "momentary": true,
+      "type": "trigger",
+      "default": 0.0
+    },
+    {
+      "key": "iso_low",
+      "name": "Low",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.5,
+      "dynamic_display": true
+    },
+    {
+      "key": "iso_mid",
+      "name": "Mid",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.5,
+      "dynamic_display": true
+    },
+    {
+      "key": "iso_high",
+      "name": "High",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.5,
+      "dynamic_display": true
+    },
+    {
+      "key": "release_len",
+      "name": "Release Beats",
+      "options": [
+        "1/2",
+        "1",
+        "2",
+        "4"
+      ],
+      "default": 1
+    },
+    {
+      "key": "echo_fb",
+      "name": "Echo Feedback",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.45
+    },
+    {
+      "key": "scene_noise",
+      "name": "Riser Noise",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.5
+    },
+    {
+      "key": "in_gain",
+      "name": "In Gain",
+      "min": -18.0,
+      "max": 6.0,
+      "default": 0.0,
+      "unit": "dB"
+    },
+    {
+      "key": "lim_ceiling",
+      "name": "Ceiling",
+      "min": -12.0,
+      "max": 0.0,
+      "default": -0.3,
+      "unit": "dB"
+    },
+    {
+      "key": "cl_on",
+      "name": "Clouds",
+      "options": [
+        "Off",
+        "On"
+      ],
+      "default": 0
+    },
+    {
+      "key": "cl_mode",
+      "name": "Mode",
+      "options": [
+        "Granular",
+        "Stretch",
+        "Looping Delay",
+        "Spectral",
+        "Oliverb",
+        "Resonestor"
+      ],
+      "default": 2
+    },
+    {
+      "key": "cl_position",
+      "name": "Position",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.5,
+      "dynamic_name": true
+    },
+    {
+      "key": "cl_size",
+      "name": "Size",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.5,
+      "dynamic_name": true
+    },
+    {
+      "key": "cl_pitch",
+      "name": "Pitch",
+      "min": -24.0,
+      "max": 24.0,
+      "default": 0.0,
+      "unit": "st",
+      "dynamic_name": true
+    },
+    {
+      "key": "cl_density",
+      "name": "Density",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.7,
+      "dynamic_name": true
+    },
+    {
+      "key": "cl_texture",
+      "name": "Texture",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.5,
+      "dynamic_name": true
+    },
+    {
+      "key": "cl_blend",
+      "name": "Blend",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.5,
+      "dynamic_name": true
+    },
+    {
+      "key": "cl_spread",
+      "name": "Spread",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.5,
+      "dynamic_name": true
+    },
+    {
+      "key": "cl_feedback",
+      "name": "Feedback",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.0,
+      "dynamic_name": true
+    },
+    {
+      "key": "cl_reverb",
+      "name": "Cloud Verb",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.0,
+      "dynamic_name": true
+    },
+    {
+      "key": "cl_freeze",
+      "name": "Freeze",
+      "options": [
+        "Off",
+        "On"
+      ],
+      "default": 0
+    },
+    {
+      "key": "cl_reverse",
+      "name": "Reverse",
+      "options": [
+        "Off",
+        "On"
+      ],
+      "default": 0
+    },
+    {
+      "key": "cl_quality",
+      "name": "Quality",
+      "options": [
+        "16-bit Stereo",
+        "16-bit Mono",
+        "8-bit Stereo",
+        "8-bit Mono"
+      ],
+      "default": 0
+    },
+    {
+      "key": "cl_trigger",
+      "name": "Trigger",
+      "min": 0.0,
+      "max": 1.0,
+      "momentary": true,
+      "type": "trigger",
+      "default": 0.0
+    },
+    {
+      "key": "cl_scene",
+      "name": "Scene Depth",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.5
+    },
+    {
+      "key": "rv_type",
+      "name": "Type",
+      "options": [
+        "Plate",
+        "Room",
+        "Hall",
+        "Clouds"
+      ],
+      "default": 0
+    },
+    {
+      "key": "rv_send",
+      "name": "Reverb",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.0
+    },
+    {
+      "key": "rv_decay",
+      "name": "Decay",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.65,
+      "dynamic_display": true
+    },
+    {
+      "key": "rv_size",
+      "name": "Size",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.5,
+      "dynamic_display": true
+    },
+    {
+      "key": "rv_tone",
+      "name": "Tone",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.6,
+      "dynamic_display": true
+    },
+    {
+      "key": "rv_predelay",
+      "name": "Predelay",
+      "min": 0.0,
+      "max": 100.0,
+      "default": 10.0,
+      "unit": "ms"
+    },
+    {
+      "key": "rv_width",
+      "name": "Width",
+      "min": 50.0,
+      "max": 150.0,
+      "default": 100.0,
+      "unit": "%"
+    },
+    {
+      "key": "rv_scene",
+      "name": "Scene Depth",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.7
+    },
+    {
+      "key": "pad_kick",
+      "name": "Pad 1",
+      "min": 0.0,
+      "max": 1.0,
+      "momentary": true,
+      "type": "trigger",
+      "default": 0.0
+    },
+    {
+      "key": "pad_snare",
+      "name": "Pad 2",
+      "min": 0.0,
+      "max": 1.0,
+      "momentary": true,
+      "type": "trigger",
+      "default": 0.0
+    },
+    {
+      "key": "pad_clap",
+      "name": "Pad 3",
+      "min": 0.0,
+      "max": 1.0,
+      "momentary": true,
+      "type": "trigger",
+      "default": 0.0
+    },
+    {
+      "key": "pad_hat",
+      "name": "Pad 4",
+      "min": 0.0,
+      "max": 1.0,
+      "momentary": true,
+      "type": "trigger",
+      "default": 0.0
+    },
+    {
+      "key": "pad_level",
+      "name": "Pad Level",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.7
+    },
+    {
+      "key": "pad_tune",
+      "name": "Pad Tune",
+      "min": -12.0,
+      "max": 12.0,
+      "default": 0.0,
+      "unit": "st",
+      "display": "int"
+    },
+    {
+      "key": "pad_roll",
+      "name": "Roll Beat",
+      "options": [
+        "1/8",
+        "1/8T",
+        "1/16",
+        "1/16T",
+        "1/32"
+      ],
+      "default": 2
+    },
+    {
+      "key": "pad_root",
+      "name": "MIDI Root",
+      "min": 0.0,
+      "max": 115.0,
+      "default": 36.0,
+      "display": "int",
+      "dynamic_display": true
+    },
+    {
+      "key": "iso_lo_freq",
+      "name": "Low/Mid Xover",
+      "min": 50.0,
+      "max": 500.0,
+      "default": 246.0,
+      "unit": "Hz",
+      "display": "int"
+    },
+    {
+      "key": "iso_hi_freq",
+      "name": "Mid/High Xover",
+      "min": 1000.0,
+      "max": 8000.0,
+      "default": 2484.0,
+      "unit": "Hz",
+      "display": "int"
+    },
+    {
+      "key": "build_hpf",
+      "name": "Build HPF Max",
+      "min": 200.0,
+      "max": 4000.0,
+      "default": 1500.0,
+      "unit": "Hz",
+      "display": "int"
+    },
+    {
+      "key": "break_lpf",
+      "name": "Break LPF Min",
+      "min": 80.0,
+      "max": 2000.0,
+      "default": 300.0,
+      "unit": "Hz",
+      "display": "int"
+    },
+    {
+      "key": "lim_drive",
+      "name": "Limiter Drive",
+      "min": 0.0,
+      "max": 18.0,
+      "default": 0.0,
+      "unit": "dB"
+    },
+    {
+      "key": "lim_release",
+      "name": "Limiter Release",
+      "min": 10.0,
+      "max": 500.0,
+      "default": 80.0,
+      "unit": "ms",
+      "display": "int"
+    },
+    {
+      "key": "pad_sel",
+      "name": "Edit Pad",
+      "options": [
+        "PAD 1",
+        "PAD 2",
+        "PAD 3",
+        "PAD 4"
+      ],
+      "default": 0
+    },
+    {
+      "key": "env_a",
+      "name": "Attack",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.0,
+      "dynamic_display": true
+    },
+    {
+      "key": "env_d",
+      "name": "Decay",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.5,
+      "dynamic_display": true
+    },
+    {
+      "key": "env_s",
+      "name": "Sustain",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 1.0,
+      "dynamic_display": true
+    },
+    {
+      "key": "env_r",
+      "name": "Release",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.3,
+      "dynamic_display": true
+    },
+    {
+      "key": "pad_sound",
+      "name": "Sound",
+      "options": [
+        "BUILT-IN",
+        "SLOT 1",
+        "SLOT 2",
+        "SLOT 3",
+        "SLOT 4",
+        "SLOT 5",
+        "SLOT 6",
+        "SLOT 7",
+        "SLOT 8",
+        "SLOT 9",
+        "SLOT 10",
+        "SLOT 11",
+        "SLOT 12",
+        "SLOT 13",
+        "SLOT 14",
+        "SLOT 15",
+        "SLOT 16"
+      ],
+      "default": 0
+    },
+    {
+      "key": "pad_file",
+      "name": "Loaded Sound",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.0,
+      "dynamic_display": true
+    },
+    {
+      "key": "pad_reload",
+      "name": "Reload Samples",
+      "min": 0.0,
+      "max": 1.0,
+      "momentary": true,
+      "type": "trigger",
+      "default": 0.0
+    },
+    {
+      "key": "roll_1",
+      "name": "Roll 1",
+      "options": [
+        "Off",
+        "On"
+      ],
+      "default": 0
+    },
+    {
+      "key": "roll_2",
+      "name": "Roll 2",
+      "options": [
+        "Off",
+        "On"
+      ],
+      "default": 0
+    },
+    {
+      "key": "roll_3",
+      "name": "Roll 3",
+      "options": [
+        "Off",
+        "On"
+      ],
+      "default": 0
+    },
+    {
+      "key": "roll_4",
+      "name": "Roll 4",
+      "options": [
+        "Off",
+        "On"
+      ],
+      "default": 0
+    }
+  ],
+  "sections": [
+    {
+      "label": "Scene",
+      "keys": [
+        "build_up",
+        "break_down",
+        "filter",
+        "filter_res",
+        "echo_send",
+        "echo_div",
+        "release_fx",
+        "release"
+      ]
+    },
+    {
+      "label": "Isolator",
+      "keys": [
+        "iso_low",
+        "iso_mid",
+        "iso_high",
+        "release_len",
+        "echo_fb",
+        "scene_noise",
+        "in_gain",
+        "lim_ceiling"
+      ]
+    },
+    {
+      "label": "Clouds",
+      "keys": [
+        "cl_on",
+        "cl_mode",
+        "cl_position",
+        "cl_size",
+        "cl_pitch",
+        "cl_density",
+        "cl_texture",
+        "cl_blend"
+      ]
+    },
+    {
+      "label": "Clouds More",
+      "keys": [
+        "cl_spread",
+        "cl_feedback",
+        "cl_reverb",
+        "cl_freeze",
+        "cl_reverse",
+        "cl_quality",
+        "cl_trigger",
+        "cl_scene"
+      ]
+    },
+    {
+      "label": "Reverb",
+      "keys": [
+        "rv_type",
+        "rv_send",
+        "rv_decay",
+        "rv_size",
+        "rv_tone",
+        "rv_predelay",
+        "rv_width",
+        "rv_scene"
+      ]
+    },
+    {
+      "label": "X-Pad",
+      "keys": [
+        "pad_kick",
+        "pad_snare",
+        "pad_clap",
+        "pad_hat",
+        "pad_level",
+        "pad_tune",
+        "pad_roll",
+        "pad_root"
+      ]
+    },
+    {
+      "label": "Setup",
+      "keys": [
+        "iso_lo_freq",
+        "iso_hi_freq",
+        "build_hpf",
+        "break_lpf",
+        "lim_drive",
+        "lim_release"
+      ]
+    },
+    {
+      "label": "Pad Edit",
+      "keys": [
+        "pad_sel",
+        "env_a",
+        "env_d",
+        "env_s",
+        "env_r",
+        "pad_sound",
+        "pad_file",
+        "pad_reload"
+      ]
+    },
+    {
+      "label": "Pad Rolls",
+      "keys": [
+        "roll_1",
+        "roll_2",
+        "roll_3",
+        "roll_4"
+      ]
+    }
+  ]
+}

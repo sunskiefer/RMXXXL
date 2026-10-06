@@ -24,7 +24,13 @@ jobs:
         run: test/run_tests.sh
 
       - name: Build (armv7, glibc 2.31)
-        run: ./build.sh
+        run: |
+          if ! ./build.sh > build.log 2>&1; then
+            grep -v -E "warning|note:|In file included|^ +[0-9]* [|]|^ +[|]|\^|~~" build.log | tail -25 \
+              | while IFS= read -r line; do echo "::error title=build.sh::$line"; done
+            exit 1
+          fi
+          tail -3 build.log
 
       - name: Package
         run: |

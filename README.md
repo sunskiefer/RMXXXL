@@ -71,7 +71,7 @@ updates.
 
 ## Building
 
-Linux or WSL with Python 3 (+ Pillow), gcc and [Zig](https://ziglang.org/) (`pip install ziglang pillow`). No
+Linux or WSL with Python 3 (+ Pillow), gcc and [Zig](https://ziglang.org/) (`pip install ziglang pillow numpy`). No
 Docker.
 
 ```

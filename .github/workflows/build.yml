@@ -18,7 +18,7 @@ jobs:
           submodules: recursive
 
       - name: Tools
-        run: pip install ziglang pillow
+        run: pip install ziglang pillow numpy
 
       - name: Tests (x86, ASan + UBSan)
         run: test/run_tests.sh

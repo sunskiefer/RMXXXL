@@ -52,7 +52,7 @@ jobs:
           sed -i 's|^- Tested on MPC OS with a Force\. |- **Not yet tested on hardware** (built and tested offline only). Report problems on https://github.com/sunskiefer/RMXXXL/issues. |' "$D/INSTALL.md"
           (cd "$D" && sed -i "/ INSTALL.md$/d" SHA256SUMS && sha256sum INSTALL.md >> SHA256SUMS && sha256sum -c --quiet SHA256SUMS)
           zip -qr "$Z" "$D" && rm -rf "$D"
-          python3 ../third_party/mpc-vst-plugins/tools/catalog_check.py "$Z" --catalog
+          case "$GITHUB_REF" in refs/tags/v*) python3 ../third_party/mpc-vst-plugins/tools/catalog_check.py "$Z" --catalog ;; esac
 
       - uses: actions/upload-artifact@v4
         with:

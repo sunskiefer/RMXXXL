@@ -8,9 +8,8 @@ filter sweeps, band kills, echoes, reverb washes, granular textures, drum and sa
 that snaps everything back. Everything sits in one insert slot, with its own touchscreen pages and Q-Link sets.
 
 > [!NOTE]
-> **Status: 1.1.1, not yet verified on hardware.** The full test suite passes on x86 (ASan + UBSan) and on the
-> ARM build under QEMU. Installing and playing it on a Force, and measuring its CPU there, is the next step.
-> Until that is done, treat it as a preview and back up your projects.
+> **Status: 1.1.1, tested on an Akai Force** (MPC OS 3.9.1 with MockbaMod). It also passes its full test suite on
+> x86 (ASan + UBSan) and on the ARM build under QEMU. Report anything odd under [Issues](../../issues).
 
 ![The REMIX page](docs/img/remix.png)
 

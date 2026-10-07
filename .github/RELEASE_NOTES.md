@@ -2,7 +2,7 @@
 
 Put it on a track, a submix or the master and play the mix live: build-ups, breakdowns, filter sweeps, band kills, echoes, reverb washes, granular textures, drum and sample pads, and a Release button that snaps everything back. Everything sits in one insert slot, with its own touchscreen pages and Q-Link sets.
 
-> ⚠️ **Pre-release, not yet tested on hardware.** It passes its full test suite offline, but nobody has run it on a Force yet. Save and back up your projects before installing, and report problems under **Issues**.
+> ✅ **Tested on an Akai Force** (MPC OS 3.9.1 with MockbaMod). As with any third-party plugin, save your projects before installing, and report problems under **Issues**.
 
 ## How you play it
 1. **Shape the mix** with the isolator (Low / Mid / High, fully left = kill) and the DJ filter (left = low-pass, right = high-pass).

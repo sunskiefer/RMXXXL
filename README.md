@@ -1,4 +1,4 @@
-# RMXXXL v.1
+# RMXXXL v1.1.1
 
 **An RMX-1000-style remix effect that runs natively inside MPC OS on the Akai Force.**
 

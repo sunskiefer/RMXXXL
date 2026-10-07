@@ -64,4 +64,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: dist/*.zip
-          body_path: CHANGELOG.md
+          body_path: .github/RELEASE_NOTES.md
+          prerelease: true

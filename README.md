@@ -102,13 +102,14 @@ Reverb. Third-party components keep their own licenses (below).
 
 - **Isolator and filter:** designs follow [Mixxx](https://github.com/mixxxdj/mixxx) 2.5 (GPL-2.0-or-later):
   `linkwitzriley8eqeffect.cpp`, `enginefilterlinkwitzriley8.cpp`, `filtereffect.cpp`, re-implemented here.
-- **Clouds:** Emilie Gillet (Mutable Instruments), with Matthias Puech's Parasites firmware (MIT), vendored from
-  [FullPace/overcast](https://github.com/FullPace/overcast). One local fix in `clouds/dsp/correlator.cc` (an
-  undefined shift by 32).
-- **MIDI input port and Clouds engine glue:** after [FullPace/overcast](https://github.com/FullPace/overcast) (MIT).
-- **Dragonfly Reverb:** Michael Willis and Rob van den Berg, freeverb3 by Teru Kamogashira (GPL-3.0-or-later),
-  vendored from [gmorb/mpc-vst-dragonfly](https://github.com/gmorb/mpc-vst-dragonfly).
-- **VST2 wrapper, skin generator, installer:** [sd88me/mpc-vst-plugins](https://github.com/sd88me/mpc-vst-plugins)
+- **Clouds:** Emilie Gillet (Mutable Instruments), with Matthias Puech's Parasites firmware (MIT). MPC OS port by
+  FullPace ([overcast](https://github.com/FullPace/overcast)), vendored from there; one local fix in
+  `clouds/dsp/correlator.cc` (an undefined shift by 32).
+- **MIDI input port and Clouds engine glue:** after FullPace's [overcast](https://github.com/FullPace/overcast) (MIT).
+- **Reverbs:** Dragonfly Reverb by Michael Willis and Rob van den Berg, built on freeverb3 by Teru Kamogashira
+  (GPL-3.0-or-later). MPC OS port by gmorb ([mpc-vst-dragonfly](https://github.com/gmorb/mpc-vst-dragonfly)),
+  vendored from there.
+- **VST2 wrapper, skin generator, installer:** sd88me ([mpc-vst-plugins](https://github.com/sd88me/mpc-vst-plugins))
   (MIT), as a submodule in `third_party/mpc-vst-plugins`.
 - **Interface font:** [Titillium Web](https://fonts.google.com/specimen/Titillium+Web), SIL Open Font License 1.1
   (`art/fonts/OFL.txt`).

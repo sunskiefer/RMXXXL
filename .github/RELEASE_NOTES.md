@@ -30,7 +30,7 @@ Download **RMXXXL-1.1.1-mpc-armv7.zip** below, unzip it, then:
 
 The installer stops MPC (save first), installs the plugin, and starts MPC again. Then insert **RMXXXL** (manufacturer ANDREALPHEUS) as an insert effect. Pad samples go in `/sdcard/RMXXXL Samples`.
 
-Full guide (every control, MIDI setup, Q-Links, samples, troubleshooting): [docs/USER_GUIDE.md](https://github.com/sunskiefer/RMXXXXL/blob/main/docs/USER_GUIDE.md)
+Full guide (every control, MIDI setup, Q-Links, samples, troubleshooting): [docs/USER_GUIDE.md](https://github.com/sunskiefer/RMXXXL/blob/main/docs/USER_GUIDE.md)
 
 ## Credits
 - **Isolator and filter:** designs after the Mixxx project's LR8 isolator and filter effect

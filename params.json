@@ -51,7 +51,8 @@
         "3/4",
         "1 Bar"
       ],
-      "default": 3
+      "default": 3,
+      "qlink_ticks": 3
     },
     {
       "key": "release_fx",
@@ -61,16 +62,18 @@
         "Vinyl Brake",
         "Backspin"
       ],
-      "default": 1
+      "default": 1,
+      "qlink_ticks": 3
     },
     {
       "key": "release",
       "name": "Release",
-      "min": 0.0,
-      "max": 1.0,
-      "momentary": true,
-      "type": "trigger",
-      "default": 0.0
+      "options": [
+        "Off",
+        "On"
+      ],
+      "default": 0,
+      "qlink_ticks": 2
     },
     {
       "key": "iso_low",
@@ -105,7 +108,8 @@
         "2",
         "4"
       ],
-      "default": 1
+      "default": 1,
+      "qlink_ticks": 3
     },
     {
       "key": "echo_fb",
@@ -144,7 +148,8 @@
         "Off",
         "On"
       ],
-      "default": 0
+      "default": 0,
+      "qlink_ticks": 2
     },
     {
       "key": "cl_mode",
@@ -157,7 +162,8 @@
         "Oliverb",
         "Resonestor"
       ],
-      "default": 2
+      "default": 2,
+      "qlink_ticks": 3
     },
     {
       "key": "cl_position",
@@ -239,7 +245,8 @@
         "Off",
         "On"
       ],
-      "default": 0
+      "default": 0,
+      "qlink_ticks": 2
     },
     {
       "key": "cl_reverse",
@@ -248,7 +255,8 @@
         "Off",
         "On"
       ],
-      "default": 0
+      "default": 0,
+      "qlink_ticks": 2
     },
     {
       "key": "cl_quality",
@@ -259,7 +267,8 @@
         "8-bit Stereo",
         "8-bit Mono"
       ],
-      "default": 0
+      "default": 0,
+      "qlink_ticks": 3
     },
     {
       "key": "cl_trigger",
@@ -286,7 +295,8 @@
         "Hall",
         "Clouds"
       ],
-      "default": 0
+      "default": 0,
+      "qlink_ticks": 3
     },
     {
       "key": "rv_send",
@@ -404,7 +414,8 @@
         "1/16T",
         "1/32"
       ],
-      "default": 2
+      "default": 2,
+      "qlink_ticks": 3
     },
     {
       "key": "pad_root",
@@ -477,7 +488,8 @@
         "PAD 3",
         "PAD 4"
       ],
-      "default": 0
+      "default": 0,
+      "qlink_ticks": 3
     },
     {
       "key": "env_a",
@@ -533,7 +545,8 @@
         "SLOT 15",
         "SLOT 16"
       ],
-      "default": 0
+      "default": 0,
+      "qlink_ticks": 3
     },
     {
       "key": "pad_file",
@@ -559,7 +572,8 @@
         "Off",
         "On"
       ],
-      "default": 0
+      "default": 0,
+      "qlink_ticks": 2
     },
     {
       "key": "roll_2",
@@ -568,7 +582,8 @@
         "Off",
         "On"
       ],
-      "default": 0
+      "default": 0,
+      "qlink_ticks": 2
     },
     {
       "key": "roll_3",
@@ -577,7 +592,8 @@
         "Off",
         "On"
       ],
-      "default": 0
+      "default": 0,
+      "qlink_ticks": 2
     },
     {
       "key": "roll_4",
@@ -586,7 +602,103 @@
         "Off",
         "On"
       ],
-      "default": 0
+      "default": 0,
+      "qlink_ticks": 2
+    },
+    {
+      "key": "kill_mode",
+      "name": "Release Mode",
+      "options": [
+        "Hard",
+        "Smooth"
+      ],
+      "default": 0,
+      "qlink_ticks": 2
+    },
+    {
+      "key": "release_go",
+      "name": "Release FX Go",
+      "min": 0.0,
+      "max": 1.0,
+      "momentary": true,
+      "type": "trigger",
+      "default": 0.0
+    },
+    {
+      "key": "panic",
+      "name": "Panic",
+      "min": 0.0,
+      "max": 1.0,
+      "momentary": true,
+      "type": "trigger",
+      "default": 0.0
+    },
+    {
+      "key": "noise_tune",
+      "name": "Riser Tune",
+      "min": -24.0,
+      "max": 24.0,
+      "default": 0.0,
+      "unit": "st",
+      "display": "int"
+    },
+    {
+      "key": "noise_mod",
+      "name": "Riser Duck",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.0,
+      "dynamic_display": true
+    },
+    {
+      "key": "preset_slot",
+      "name": "Preset",
+      "options": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16"
+      ],
+      "default": 0,
+      "qlink_ticks": 3
+    },
+    {
+      "key": "preset_save",
+      "name": "Save Preset",
+      "min": 0.0,
+      "max": 1.0,
+      "momentary": true,
+      "type": "trigger",
+      "default": 0.0
+    },
+    {
+      "key": "preset_load",
+      "name": "Load Preset",
+      "min": 0.0,
+      "max": 1.0,
+      "momentary": true,
+      "type": "trigger",
+      "default": 0.0
+    },
+    {
+      "key": "preset_info",
+      "name": "Preset Status",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.0,
+      "dynamic_display": true
     }
   ],
   "sections": [
@@ -699,6 +811,20 @@
         "roll_2",
         "roll_3",
         "roll_4"
+      ]
+    },
+    {
+      "label": "Release / Presets",
+      "keys": [
+        "kill_mode",
+        "release_go",
+        "panic",
+        "noise_tune",
+        "noise_mod",
+        "preset_slot",
+        "preset_save",
+        "preset_load",
+        "preset_info"
       ]
     }
   ]

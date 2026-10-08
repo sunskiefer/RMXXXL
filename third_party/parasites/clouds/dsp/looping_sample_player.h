@@ -119,12 +119,12 @@ class LoopingSamplePlayer {
         int32_t delay_int = (buffer->head() - 4 - size + buffer->size()) << 12;
         delay_int -= static_cast<int32_t>(delay * 4096.0f);
         
-        float l = buffer[0].ReadHermite((delay_int >> 12), delay_int << 4);
+        float l = buffer[0].ReadHermite((delay_int >> 12), static_cast<uint16_t>(static_cast<uint32_t>(delay_int) << 4));
         if (num_channels_ == 1) {
           *out++ = l;
           *out++ = l;
         } else if (num_channels_ == 2) {
-          float r = buffer[1].ReadHermite((delay_int >> 12), delay_int << 4);
+          float r = buffer[1].ReadHermite((delay_int >> 12), static_cast<uint16_t>(static_cast<uint32_t>(delay_int) << 4));
           *out++ = l + (r - l) * swap_channels;
           *out++ = r + (l - r) * swap_channels;
         }
@@ -181,12 +181,12 @@ class LoopingSamplePlayer {
 
         int32_t position = delay_int - static_cast<int32_t>(
           (loop_duration_ - ph + loop_point_) * 4096.0f);
-        float l = buffer[0].ReadHermite((position >> 12), position << 4);
+        float l = buffer[0].ReadHermite((position >> 12), static_cast<uint16_t>(static_cast<uint32_t>(position) << 4));
         if (num_channels_ == 1) {
           out[0] = l * gain;
           out[1] = l * gain;
         } else if (num_channels_ == 2) {
-          float r = buffer[1].ReadHermite((position >> 12), position << 4);
+          float r = buffer[1].ReadHermite((position >> 12), static_cast<uint16_t>(static_cast<uint32_t>(position) << 4));
           out[0] = (l + (r - l) * swap_channels) * gain;
           out[1] = (r + (l - r) * swap_channels) * gain;
         }
@@ -196,12 +196,12 @@ class LoopingSamplePlayer {
           int32_t position = delay_int - static_cast<int32_t>(
                 (-phase_ + tail_start_) * 4096.0f);
         
-          float l = buffer[0].ReadHermite((position >> 12), position << 4);
+          float l = buffer[0].ReadHermite((position >> 12), static_cast<uint16_t>(static_cast<uint32_t>(position) << 4));
           if (num_channels_ == 1) {
             out[0] += l * gain;
             out[1] += l * gain;
           } else if (num_channels_ == 2) {
-            float r = buffer[1].ReadHermite((position >> 12), position << 4);
+            float r = buffer[1].ReadHermite((position >> 12), static_cast<uint16_t>(static_cast<uint32_t>(position) << 4));
             out[0] += (l + (r - l) * swap_channels) * gain;
             out[1] += (r + (l - r) * swap_channels) * gain;
           }

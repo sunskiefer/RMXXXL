@@ -1,6 +1,7 @@
 // RMXXXL functional test: drives the engine directly (wrapper/engine.h), the way MPC's 128-frame blocks would,
 // and checks every section: isolator, filter, scene macros, echo, Clouds (all modes), the three reverbs and the
-// Clouds reverb, type switches, the three release FX, pads, rolls, MIDI release, state save/restore, tempo.
+// Clouds reverb, type switches, the three release FX, pads, rolls, MIDI release, state save/restore, tempo; 1.2: triggers
+// that fire on every press, the Release kill switch, Panic, the riser Tune/Duck and user presets.
 // Build: test/run_tests.sh (ASan + UBSan). Exit status 1 on any failure.
 #include <math.h>
 #include <stdio.h>
@@ -237,7 +238,7 @@ int main() {
   set(d, "release_fx", 1);
   set(d, "release_len", 1);   // 1 beat = 0.5 s at 120 BPM
   run(d, sig, 100, 1000);
-  set(d, "release", 1); set(d, "release", 0);
+  set(d, "release_go", 1);
   run(d, sig, 140, 1000);    // most of the beat
   double end_of_brake = run(d, sig, 20, 1000, 0.3, 4);
   check(end_of_brake < dry1k * 0.5, "Vinyl Brake slows to near silence", end_of_brake);
@@ -246,7 +247,7 @@ int main() {
   check(fabs(after - dry1k) < 0.03, "after the brake the live signal is back", after);
 
   set(d, "release_fx", 2);
-  set(d, "release", 1); set(d, "release", 0);
+  set(d, "release_go", 1);
   double spin = run(d, sig, 150, 1000);
   check(isfinite(spin) && spin > 0.001, "Backspin plays", spin);
   run(d, sig, 100, 1000);
@@ -257,7 +258,7 @@ int main() {
   set(d, "echo_fb", 0.45);
   set(d, "release_len", 2);   // 2 beats = 1 s
   run(d, sig, 100, 1000);
-  set(d, "release", 1); set(d, "release", 0);
+  set(d, "release_go", 1);
   double echo_out = run(d, sig, 100, -1);    // input stops at the press: the repeats carry on
   check(echo_out > 0.03, "Echo Out repeats the last beat after the input stops", echo_out);
   run(d, sig, 300, -1);
@@ -270,7 +271,7 @@ int main() {
   set(d, "build_up", 1.0);
   run(d, sig, 50, 100);
   set(d, "release_fx", 1);
-  set(d, "release", 1); set(d, "release", 0);
+  set(d, "release_go", 1);
   run(d, sig, 200, 100);
   double latched = run(d, sig, 100, 100);
   check(fabs(latched - dry1k) < 0.05, "after Release the Build Up is latched off", latched);
@@ -282,12 +283,12 @@ int main() {
   note(d, 36, 127); note(d, 36, 0);
   double kick = run(d, sig, 30, -1);
   check(kick > 0.02, "MIDI kick plays", kick);
-  set(d, "pad_snare", 1); set(d, "pad_snare", 0);
+  set(d, "pad_snare", 1);
   double snare = run(d, sig, 20, -1);
   check(snare > 0.01, "screen Snare pad plays", snare);
-  set(d, "pad_clap", 1); set(d, "pad_clap", 0);
+  set(d, "pad_clap", 1);
   check(run(d, sig, 20, -1) > 0.005, "screen Clap pad plays", 0);
-  set(d, "pad_hat", 1); set(d, "pad_hat", 0);
+  set(d, "pad_hat", 1);
   check(run(d, sig, 10, -1) > 0.002, "screen Hat pad plays", 0);
   run(d, sig, 300, -1);
   note(d, 41, 100);   // root + 5 = snare roll
@@ -305,6 +306,123 @@ int main() {
   check(midi_brake < dry1k * 0.5, "MIDI Release note fires the brake", midi_brake);
   E->get_param(d, "pad_root_display", buf, sizeof buf);
   check(!strcmp(buf, "C1"), "MIDI root 36 shows as C1", 0);
+
+
+  // ---------------------------------------------------------------- 1.2: triggers fire on every press
+  {
+    // MPC's screen button toggles the value it read back; a trigger must read back 0 so every tap sends 1.
+    set(d, "pad_root", 36);
+    run(d, sig, 400, -1);
+    set(d, "pad_kick", 1);
+    E->get_param(d, "pad_kick", buf, sizeof buf);
+    check(atof(buf) == 0.0, "a trigger reads back 0 right after a press", atof(buf));
+    double k1 = run(d, sig, 20, -1);
+    run(d, sig, 300, -1);
+    set(d, "pad_kick", 1);   // the second tap: no 0 in between, as MPC sends it
+    double k2 = run(d, sig, 20, -1);
+    check(k1 > 0.02 && k2 > 0.02, "a second tap with no release in between fires again", k2);
+    run(d, sig, 300, -1);
+  }
+
+  // ---------------------------------------------------------------- 1.2: Release = kill switch
+  {
+    // effects on: echo + reverb + a filter. Release On -> output equals the dry input, and no knob moves.
+    set(d, "echo_send", 0.6); set(d, "rv_send", 0.6); set(d, "rv_type", 0); set(d, "filter", -0.6);
+    double wet = run(d, sig, 200, 3000);
+    check(wet < dry1k * 0.7, "effects on: the filter takes the 3 kHz down", wet);
+    set(d, "kill_mode", 0);
+    set(d, "release", 1);
+    double killed = run(d, sig, 40, 3000);
+    check(fabs(killed - dry1k) < 0.01, "Release Hard: dry within one block", killed);
+    E->get_param(d, "echo_send", buf, sizeof buf);
+    double es = atof(buf);
+    E->get_param(d, "filter", buf, sizeof buf);
+    check(fabs(es - 0.6) < 1e-6 && fabs(atof(buf) + 0.6) < 1e-6, "Release moves no parameter", es);
+    set(d, "release", 0);
+    double back = run(d, sig, 40, 3000);
+    check(fabs(back - wet) < 0.03, "Release Off: the effects come back as they were", back);
+    // Smooth: over Release Beats (1 beat = 0.5 s at 120 BPM): halfway through it is between wet and dry
+    set(d, "kill_mode", 1); set(d, "release_len", 1);
+    set(d, "release", 1);
+    double half = run(d, sig, 86, 3000, 0.3, 10);   // ~0.25 s in
+    double full = run(d, sig, 120, 3000, 0.3, 20);
+    check(half > wet + 0.01 && half < dry1k - 0.01 && fabs(full - dry1k) < 0.01, "Release Smooth fades over the beats", half);
+    // MIDI root + 9 toggles it
+    note(d, 45, 100); note(d, 45, 0);
+    run(d, sig, 300, 3000);
+    E->get_param(d, "release", buf, sizeof buf);
+    check(atoi(buf) == 0, "MIDI note root + 9 toggles Release", atoi(buf));
+    set(d, "kill_mode", 0);
+    set(d, "echo_send", 0); set(d, "rv_send", 0); set(d, "filter", 0);
+    run(d, sig, 13 * 44100 / kBlock, -1);
+  }
+
+  // ---------------------------------------------------------------- 1.2: riser Tune and Duck
+  {
+    // the input is killed by the isolator, so what comes out is the riser (the Duck still hears the input)
+    set(d, "iso_low", 0); set(d, "iso_mid", 0); set(d, "iso_high", 0);
+    set(d, "build_up", 0.8); set(d, "scene_noise", 1); set(d, "rv_scene", 0); set(d, "cl_scene", 0);
+    int16_t in[kBlock * 2], out[kBlock * 2];
+    auto zcr = [&](double tune) {
+      set(d, "noise_tune", tune);
+      long crossings = 0, count = 0;
+      int16_t prev = 0;
+      for (int b = 0; b < 200; ++b) {
+        memset(in, 0, sizeof in);
+        E->process(d, in, out, kBlock);
+        if (b < 100) continue;
+        for (int i = 0; i < kBlock; ++i) { if ((out[2 * i] >= 0) != (prev >= 0)) ++crossings; prev = out[2 * i]; ++count; }
+      }
+      return (double)crossings / count;
+    };
+    set(d, "build_up", 0.5);   // the band's centre ~1.5 kHz: well inside the range either way
+    double lo = zcr(-12), hi = zcr(12);
+    set(d, "build_up", 0.8);
+    check(hi > lo * 1.5, "Riser Tune moves the noise band up", hi / lo);
+    set(d, "noise_tune", 0);
+    double free_ = run(d, sig, 200, 80, 0.8);
+    set(d, "noise_mod", 1);
+    double ducked = run(d, sig, 200, 80, 0.8);
+    check(ducked < free_ * 0.5, "Riser Duck pushes the riser down under a loud input", ducked / free_);
+    E->get_param(d, "noise_mod_display", buf, sizeof buf);
+    check(!strcmp(buf, "100 %"), "Riser Duck shows a percentage", 0);
+    set(d, "noise_mod", 0);
+    set(d, "iso_low", 0.5); set(d, "iso_mid", 0.5); set(d, "iso_high", 0.5);
+    set(d, "build_up", 0); set(d, "rv_scene", 0.7); set(d, "cl_scene", 0.5);
+    run(d, sig, 13 * 44100 / kBlock, -1);
+  }
+
+  // ---------------------------------------------------------------- 1.2: Panic
+  {
+    set(d, "echo_send", 0.8); set(d, "echo_fb", 0.9); set(d, "rv_send", 0.8); set(d, "rv_type", 2);
+    set(d, "filter", 0.5); set(d, "cl_on", 1); set(d, "release", 1); set(d, "in_gain", -6);
+    set(d, "pad_level", 0.3); set(d, "pad_sel", 2); set(d, "env_d", 0.8);
+    run(d, sig, 300, 0, 0.3);
+    set(d, "panic", 1);
+    double after_panic = run(d, sig, 10, -1, 0.3, 8);   // silent input: no tail may ring on
+    check(after_panic < 0.001, "Panic clears every tail at once", after_panic);
+    const char* reset[] = { "echo_send", "echo_fb", "rv_send", "rv_type", "filter", "cl_on", "release", "in_gain" };
+    bool all_default = true;
+    for (const char* k : reset) {
+      E->get_param(d, k, buf, sizeof buf);
+      double v = atof(buf);
+      double def = !strcmp(k, "echo_fb") ? 0.45 : 0.0;
+      if (fabs(v - def) > 1e-6) { all_default = false; printf("     %s = %g\n", k, v); }
+    }
+    check(all_default, "Panic puts the effect controls back to their defaults", 0);
+    E->get_param(d, "pad_level", buf, sizeof buf);
+    double pl = atof(buf);
+    E->get_param(d, "env_d", buf, sizeof buf);
+    check(fabs(pl - 0.3) < 1e-6 && fabs(atof(buf) - 0.8) < 1e-6, "Panic keeps the pad setup", pl);
+    double dry_again = run(d, sig, 100, 1000);
+    check(fabs(dry_again - dry1k) < 0.02, "after Panic the signal passes dry", dry_again);
+    set(d, "pad_level", 0.7); set(d, "lim_ceiling", 0);
+    note(d, 36 + 10, 100); note(d, 46, 0);   // root + 10 = Panic, from MIDI too
+    run(d, sig, 2, -1);
+    E->get_param(d, "lim_ceiling", buf, sizeof buf);
+    check(fabs(atof(buf) + 0.3) < 1e-6, "MIDI note root + 10 is Panic", atof(buf));
+    set(d, "lim_ceiling", 0);
+  }
 
   // ---------------------------------------------------------------- state
   set(d, "rv_type", 2);
@@ -405,7 +523,7 @@ int main() {
     // screen tap on pad 2 (24-bit mono slot) plays and selects pad 2
     set(p, "pad_sel", 1); set(p, "env_a", 0);
     set(p, "pad_sel", 0);
-    set(p, "pad_snare", 1); set(p, "pad_snare", 0);
+    set(p, "pad_snare", 1);
     double tap = run(p, ps, 4, -1);
     check(tap > 0.05, "screen tap plays a 24-bit mono sample", tap);
     E->get_param(p, "pad_sel", t, sizeof t);
@@ -416,18 +534,18 @@ int main() {
     E->get_param(p, "pad_file_display", t, sizeof t);
     check(strstr(t, "EMPTY") != NULL, "an empty slot says EMPTY", 0);
     run(p, ps, 100, -1);
-    set(p, "pad_snare", 1); set(p, "pad_snare", 0);
+    set(p, "pad_snare", 1);
     double silent = run(p, ps, 10, -1);
     check(silent < 0.0005, "an empty slot plays nothing", silent);
 
     // reload picks up a new file (sorted: c_float.wav becomes slot 3)
     write_wav("/tmp/rmxxxl_test_samples/c_float.wav", 2, 32, 22050, 22050, 330);
     set(p, "pad_sound", 3);
-    set(p, "pad_reload", 1); set(p, "pad_reload", 0);
+    set(p, "pad_reload", 1);
     for (int i = 0; i < 100; ++i) { run(p, ps, 2, -1); struct timespec ts = {0, 5000000}; nanosleep(&ts, NULL); }
     E->get_param(p, "pad_file_display", t, sizeof t);
     check(!strcmp(t, "PAD 2: c_float.wav"), "Reload loads a new 32-bit float file into slot 3", 0);
-    set(p, "pad_snare", 1); set(p, "pad_snare", 0);
+    set(p, "pad_snare", 1);
     check(run(p, ps, 10, -1) > 0.05, "and it plays", 0);
 
     // roll latch: keeps hitting until switched off
@@ -439,6 +557,62 @@ int main() {
     run(p, ps, 300, -1);
     double rl_off = run(p, ps, 100, -1);
     check(rl > 0.01 && rl_off < 0.002, "Roll latch on screen: rolls, then stops", rl);
+
+
+    // ---------------------------------------------------------------- 1.2: user presets
+    {
+      // presets live beside the sample folder: /tmp/RMXXXL Presets for /tmp/rmxxxl_test_samples
+      system("rm -rf '/tmp/RMXXXL Presets'");
+      void* q = E->create(dir);
+      Sig qs;
+      auto settle = [&](void* x) {
+        for (int i = 0; i < 60; ++i) { run(x, qs, 1, -1); struct timespec ts = {0, 3000000}; nanosleep(&ts, NULL); }
+      };
+      set(q, "preset_slot", 2);
+      E->get_param(q, "preset_info_display", t, sizeof t);
+      check(!strcmp(t, "PRESET 3: EMPTY"), "an unused preset slot shows EMPTY", 0);
+      set(q, "echo_send", 0.42); set(q, "rv_type", 1); set(q, "pad_sel", 1); set(q, "env_a", 0.25); set(q, "pad_sound", 4);
+      set(q, "release", 1);
+      set(q, "preset_save", 1);
+      settle(q);
+      E->get_param(q, "preset_info_display", t, sizeof t);
+      FILE* f = fopen("/tmp/RMXXXL Presets/Preset 03.txt", "r");
+      check(f != NULL && !strcmp(t, "PRESET 3: SAVED"), "Save writes Preset 03.txt and says so", 0);
+      if (f) fclose(f);
+      set(q, "echo_send", 0.0); set(q, "rv_type", 2); set(q, "pad_sel", 1); set(q, "env_a", 0.9); set(q, "pad_sound", 0);
+      set(q, "release", 0);
+      set(q, "preset_load", 1);
+      settle(q);
+      E->get_param(q, "echo_send", t, sizeof t);
+      double es = atof(t);
+      E->get_param(q, "rv_type", t, sizeof t);
+      int rt = atoi(t);
+      set(q, "pad_sel", 1);
+      E->get_param(q, "env_a", t, sizeof t);
+      double ea = atof(t);
+      E->get_param(q, "pad_sound", t, sizeof t);
+      int ps2 = atoi(t);
+      check(fabs(es - 0.42) < 1e-6 && rt == 1 && fabs(ea - 0.25) < 1e-6 && ps2 == 4, "Load brings back effects, pad envelope and sound", es);
+      E->get_param(q, "release", t, sizeof t);
+      check(atoi(t) == 0, "a preset leaves Release (the kill switch) alone", atoi(t));
+      E->get_param(q, "preset_info_display", t, sizeof t);
+      check(!strcmp(t, "PRESET 3: LOADED"), "Load says LOADED", 0);
+      E->get_param(q, "display_rev", t, sizeof t);
+      check(atoi(t) > 0, "a load bumps display_rev, so MPC redraws the knobs", atoi(t));
+      // a fresh instance sees the stored slot; an empty slot reports EMPTY and changes nothing
+      void* q2 = E->create(dir);
+      set(q2, "preset_slot", 2);
+      E->get_param(q2, "preset_info_display", t, sizeof t);
+      check(!strcmp(t, "PRESET 3: STORED"), "a new instance finds the stored preset", 0);
+      set(q2, "preset_slot", 9); set(q2, "echo_send", 0.33);
+      set(q2, "preset_load", 1);
+      settle(q2);
+      E->get_param(q2, "preset_info_display", t, sizeof t);
+      E->get_param(q2, "echo_send", buf, sizeof buf);
+      check(!strcmp(t, "PRESET 10: EMPTY") && fabs(atof(buf) - 0.33) < 1e-6, "loading an empty slot changes nothing", atof(buf));
+      E->destroy(q2);
+      E->destroy(q);
+    }
 
     // per-pad values survive save/restore
     set(p, "pad_sel", 3); set(p, "env_d", 0.9); set(p, "pad_sound", 1);

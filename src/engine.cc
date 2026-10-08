@@ -4,15 +4,23 @@
 //
 //   in -> In Gain -> Isolator (Mixxx LR8) -> Filter (Mixxx biquads, + Scene sweeps) -> Clouds (Parasites)
 //      -> dry (gated by Echo Out) + Echo (tempo-synced) + Riser noise -> Reverb send (Dragonfly Plate/Room/Hall)
-//      -> Tape (Echo Out / Vinyl Brake / Backspin) -> + X-Pad drums -> brickwall limiter (Drive, Ceiling) -> out
+//      -> Tape (Echo Out / Vinyl Brake / Backspin) -> Release (kill to dry) -> + X-Pad drums
+//      -> brickwall limiter (Drive, Ceiling) -> out
 //
 // Scene FX: Build Up / Break Down are macros over filter, echo, Clouds, reverb and the noise riser.
 // Release FX (button or MIDI) plays Echo Out / Vinyl Brake / Backspin for a number of beats, and latches the Scene
 // macros off until both knobs are turned back to zero (as the RMX's release snaps the scene back to dry).
+// Release (1.2) is a kill switch: On crossfades the effect chain to the dry input (Hard: 5 ms, Smooth: over Release
+// Beats) and Off brings it back the same way. No parameter moves, and the effects keep running underneath.
+// Panic puts every effect parameter back to its default, clears the tails and stops the pads; the pad setup stays.
 //
 // MPC OS sends no MIDI to insert effects, so each instance opens its own ALSA MIDI input, "RMXXXL N"
 // (src/midi_in.cc, from FullPace/overcast). Notes, chromatic from MIDI Root: +0..3 Kick/Snare/Clap/Hat,
-// +4..7 the same as rolls while held, +8 Release.
+// +4..7 the same as rolls while held, +8 Release FX, +9 Release on/off, +10 Panic.
+//
+// Presets (1.2): 16 slots, files "<slot>.txt" holding the state string, in "RMXXXL Presets" beside the sample folder
+// (/sdcard/RMXXXL Presets on the device). Save snapshots the state on the caller's thread and the worker writes it;
+// Load has the worker read the file and the audio thread apply it. Pad sounds and envelopes are part of a preset.
 //
 // PADS page: Edit Pad selects which pad the Attack/Decay/Sustain/Release and Sound controls show; the engine keeps
 // the values of all four and pushes the selected pad's into those controls (HAS_DISPLAY_REV). Sound picks the pad's
@@ -24,6 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <sys/stat.h>
 #include <new>
 
 #include "clouds/dsp/granular_processor.h"
@@ -133,11 +142,30 @@ struct Instance {
   float roll_count[rfx::PAD_COUNT];
   bool roll_latched_was[rfx::PAD_COUNT];
   volatile int midi_release;
+  volatile int midi_kill_toggle;
+
+  // ---- release (kill) and riser
+  float kill_amt;                      // 0 = effects, 1 = dry
+  float duck_env;                      // riser ducker: input envelope
+
+  // ---- presets (file I/O on the worker thread)
+  char preset_dir[512];
+  pthread_mutex_t preset_mutex;        // guards the request fields below (screen thread vs worker)
+  char* save_text;                     // a snapshot waiting to be written (worker frees it)
+  int save_slot;
+  int load_slot;                       // -1: none
+  char* loaded_text;                   // read by the worker, applied by the audio thread (atomic hand-over)
+  char* retired_text;                  // applied, handed back to the worker to free
+  int loaded_slot;
+  volatile unsigned slot_used;         // bit per slot: a file exists
+  volatile int preset_status;          // 0 idle, 1 saved, 2 loaded, 3 save failed, 4 empty slot, 5 load failed
+  volatile int status_slot;
 
   float bpm;
 
   float bl[kSub], br[kSub];          // working buffers
   float sl[kSub], sr[kSub];          // sends
+  float dl[kSub], dr[kSub];          // dry input (after In Gain), for Release
   float wl[kSub], wr[kSub];          // reverb wet
 };
 
@@ -146,6 +174,85 @@ int Option(const Instance* s, int p) { return static_cast<int>(s->param[p] + 0.5
 Instance* NewInstance() {
   void* mem = calloc(1, sizeof(Instance));
   return mem ? new (mem) Instance : NULL;
+}
+
+// ------------------------------------------------------------------------------------------------ presets
+const int kPresetSlots = 16;
+
+void PresetPath(const Instance* s, int slot, char* buf, size_t len) {
+  snprintf(buf, len, "%s/Preset %02d.txt", s->preset_dir, slot + 1);
+}
+
+void ScanPresets(Instance* s) {
+  unsigned used = 0;
+  char path[600];
+  for (int i = 0; i < kPresetSlots; ++i) {
+    struct stat st;
+    PresetPath(s, i, path, sizeof path);
+    if (stat(path, &st) == 0 && S_ISREG(st.st_mode)) used |= 1u << i;
+  }
+  s->slot_used = used;
+}
+
+void SetPresetStatus(Instance* s, int slot, int status) {
+  s->status_slot = slot;
+  s->preset_status = status;
+  __atomic_add_fetch(&s->display_rev, 1, __ATOMIC_RELAXED);
+}
+
+bool WriteText(const char* dir, const char* path, const char* text) {
+  mkdir(dir, 0777);
+  char tmp[640];
+  snprintf(tmp, sizeof tmp, "%s.tmp", path);
+  FILE* f = fopen(tmp, "w");
+  if (!f) return false;
+  size_t len = strlen(text);
+  bool ok = fwrite(text, 1, len, f) == len;
+  ok = (fclose(f) == 0) && ok;
+  if (ok) ok = rename(tmp, path) == 0;
+  if (!ok) remove(tmp);
+  return ok;
+}
+
+char* ReadText(const char* path) {
+  FILE* f = fopen(path, "r");
+  if (!f) return NULL;
+  char* buf = static_cast<char*>(malloc(8192));
+  size_t len = buf ? fread(buf, 1, 8191, f) : 0;
+  fclose(f);
+  if (!buf) return NULL;
+  buf[len] = 0;
+  return buf;
+}
+
+// Worker side: write a pending save, read a pending load, free what the audio thread gave back.
+void PresetWork(Instance* s) {
+  free(__atomic_exchange_n(&s->retired_text, (char*)NULL, __ATOMIC_ACQ_REL));
+  pthread_mutex_lock(&s->preset_mutex);
+  char* text = s->save_text;
+  int save_slot = s->save_slot, load_slot = s->load_slot;
+  s->save_text = NULL;
+  s->load_slot = -1;
+  pthread_mutex_unlock(&s->preset_mutex);
+  char path[600];
+  if (text) {
+    PresetPath(s, save_slot, path, sizeof path);
+    bool ok = WriteText(s->preset_dir, path, text);
+    free(text);
+    if (ok) s->slot_used = s->slot_used | (1u << save_slot);
+    SetPresetStatus(s, save_slot, ok ? 1 : 3);
+  }
+  if (load_slot >= 0) {
+    PresetPath(s, load_slot, path, sizeof path);
+    char* loaded = ReadText(path);
+    if (!loaded) {
+      s->slot_used = s->slot_used & ~(1u << load_slot);
+      SetPresetStatus(s, load_slot, 4);
+    } else {
+      s->loaded_slot = load_slot;
+      free(__atomic_exchange_n(&s->loaded_text, loaded, __ATOMIC_ACQ_REL));   // an unapplied older load is dropped
+    }
+  }
 }
 
 void* PrepareLoop(void* arg) {
@@ -166,6 +273,7 @@ void* PrepareLoop(void* arg) {
       rfx::SampleBank* nb = rfx::LoadSampleBank(s->sample_dir);
       if (nb) __atomic_store_n(&s->pending, nb, __ATOMIC_RELEASE);
     }
+    PresetWork(s);
   }
   return NULL;
 }
@@ -175,7 +283,15 @@ void Destroy(void* inst);
 void* Create(const char* data_dir) {
   Instance* s = NewInstance();
   if (!s) return NULL;
+  pthread_mutex_init(&s->preset_mutex, NULL);
+  s->load_slot = -1;
   snprintf(s->sample_dir, sizeof s->sample_dir, "%s", data_dir ? data_dir : "/sdcard/RMXXXL Samples");
+  {   // presets live beside the sample folder: "<parent>/RMXXXL Presets"
+    const char* slash = strrchr(s->sample_dir, '/');
+    int parent = slash ? static_cast<int>(slash - s->sample_dir) : 0;
+    snprintf(s->preset_dir, sizeof s->preset_dir, "%.*s%sRMXXXL Presets", parent, s->sample_dir, slash ? "/" : "");
+  }
+  ScanPresets(s);
   s->bank = rfx::LoadSampleBank(s->sample_dir);
   s->large_buffer = new (std::nothrow) uint8_t[kLargeBufferSize];
   s->small_buffer = new (std::nothrow) uint8_t[kSmallBufferSize];
@@ -236,6 +352,10 @@ void Destroy(void* inst) {
     pthread_mutex_destroy(&s->prepare_mutex);
   }
   midi_in::Close(s->midi);
+  free(s->save_text);
+  free(s->loaded_text);
+  free(s->retired_text);
+  pthread_mutex_destroy(&s->preset_mutex);
   for (int i = 0; i < kNumReverbs; ++i) if (s->rv[i]) kReverbs[i]->destroy(s->rv[i]);
   free(s->echo_mem);
   free(s->tape_mem);
@@ -306,11 +426,34 @@ void Midi(void* inst, const uint8_t* msg, int len) {
     }
   } else if (rel == 8 && on) {
     s->midi_release = 1;
+  } else if (rel == 9 && on) {
+    s->midi_kill_toggle = 1;
+  } else if (rel == 10 && on) {
+    s->trig_pending[P_PANIC] = 1;
   }
 }
 
 // ------------------------------------------------------------------------------------------------ params
 void SetParam(void* inst, const char* key, const char* val);
+int SaveState(const Instance* s, char* buf, int buf_len);
+
+// Screen side of a preset save: snapshot the state now (the worker writes the file).
+void RequestSave(Instance* s) {
+  char* text = static_cast<char*>(malloc(8192));
+  if (!text) return;
+  SaveState(s, text, 8192);
+  pthread_mutex_lock(&s->preset_mutex);
+  free(s->save_text);   // an unwritten older save of the same press burst is replaced
+  s->save_text = text;
+  s->save_slot = Clamp(Option(s, P_PRESET_SLOT), 0, kPresetSlots - 1);
+  pthread_mutex_unlock(&s->preset_mutex);
+}
+
+void RequestLoad(Instance* s) {
+  pthread_mutex_lock(&s->preset_mutex);
+  s->load_slot = Clamp(Option(s, P_PRESET_SLOT), 0, kPresetSlots - 1);
+  pthread_mutex_unlock(&s->preset_mutex);
+}
 
 int SaveState(const Instance* s, char* buf, int buf_len) {
   int len = 0;
@@ -325,7 +468,13 @@ int SaveState(const Instance* s, char* buf, int buf_len) {
   return len < buf_len ? len : buf_len - 1;
 }
 
-void LoadState(Instance* s, const char* state) {
+// Not part of a preset: the kill switch (a performance state), the slot itself and the status readout.
+bool PresetSkips(const char* key) {
+  return !strcmp(key, "release") || !strcmp(key, "preset_slot") || !strcmp(key, "preset_info");
+}
+
+// preset: a user preset (skips PresetSkips keys) rather than MPC restoring a project.
+void LoadState(Instance* s, const char* state, bool preset) {
   char item[64];
   while (*state) {
     size_t n = strcspn(state, ";");
@@ -335,7 +484,7 @@ void LoadState(Instance* s, const char* state) {
       char* eq = strchr(item, '=');
       if (eq) {
         *eq = 0;
-        if (strcmp(item, "state")) SetParam(s, item, eq + 1);
+        if (strcmp(item, "state") && !(preset && PresetSkips(item))) SetParam(s, item, eq + 1);
       }
     }
     state += n;
@@ -346,7 +495,7 @@ void LoadState(Instance* s, const char* state) {
 
 void SetParam(void* inst, const char* key, const char* val) {
   Instance* s = static_cast<Instance*>(inst);
-  if (!strcmp(key, "state")) { LoadState(s, val); return; }
+  if (!strcmp(key, "state")) { LoadState(s, val, false); return; }
   if (!strncmp(key, "pad", 3) && key[3] >= '0' && key[3] <= '3' && key[4] == '_') {   // saved per-pad values
     int k = key[3] - '0';
     const char* f = key + 5;
@@ -362,9 +511,17 @@ void SetParam(void* inst, const char* key, const char* val) {
   for (int p = 0; p < P_COUNT; ++p) {
     if (strcmp(key, kParamDefs[p].key)) continue;
     float v = Clamp(static_cast<float>(atof(val)), kParamDefs[p].min, kParamDefs[p].max);
-    if (kParamDefs[p].kind == K_TRIGGER && v > 0.5f && s->param[p] <= 0.5f) {
-      s->trig_pending[p] = 1;
-      if (p == P_PAD_RELOAD) s->reload_req = 1;
+    if (kParamDefs[p].kind == K_TRIGGER) {
+      // Every press fires. A trigger reads back 0 at once (GetParam), so MPC's button, which toggles the value it
+      // read back, always sends 1 on a tap. (Up to 1.1.1 the engine kept the 1, so every second tap sent 0 and did
+      // nothing: screen pads seemed to need several taps.)
+      if (v > 0.5f) {
+        s->trig_pending[p] = 1;
+        if (p == P_PAD_RELOAD) s->reload_req = 1;
+        if (p == P_PRESET_SAVE) RequestSave(s);
+        if (p == P_PRESET_LOAD) RequestLoad(s);
+      }
+      return;
     }
     float old = s->param[p];
     s->param[p] = v;
@@ -428,6 +585,15 @@ int Display(const Instance* s, int p, char* buf, int len) {
     case P_PAD_ROOT: {
       int n = static_cast<int>(v + 0.5f);
       return snprintf(buf, len, "%s%d", kNotes[n % 12], n / 12 - 2);   // MPC numbering: note 60 = C3
+    }
+    case P_NOISE_MOD:
+      return v < 0.005f ? snprintf(buf, len, "Off") : snprintf(buf, len, "%d %%", static_cast<int>(v * 100.0f + 0.5f));
+    case P_PRESET_INFO: {
+      int slot = Clamp(Option(s, P_PRESET_SLOT), 0, kPresetSlots - 1);
+      int st = s->status_slot == slot ? s->preset_status : 0;
+      static const char* const kStatus[6] = { NULL, "SAVED", "LOADED", "SAVE FAILED", "EMPTY", "LOAD FAILED" };
+      if (st > 0 && st < 6) return snprintf(buf, len, "PRESET %d: %s", slot + 1, kStatus[st]);
+      return snprintf(buf, len, "PRESET %d: %s", slot + 1, (s->slot_used >> slot) & 1u ? "STORED" : "EMPTY");
     }
   }
   return 0;
@@ -573,7 +739,60 @@ void Render(void* inst, int16_t* out_lr, int frames) {
   memset(out_lr, 0, sizeof(int16_t) * 2 * frames);   // an effect: the wrapper calls Process()
 }
 
+// Panic keeps these: the pad setup (sounds, envelopes, level, tune, roll beat, MIDI root) and the preset slot.
+bool PanicKeeps(int p) {
+  switch (p) {
+    case P_PAD_LEVEL: case P_PAD_TUNE: case P_PAD_ROLL: case P_PAD_ROOT: case P_PAD_SEL: case P_ENV_A: case P_ENV_D:
+    case P_ENV_S: case P_ENV_R: case P_PAD_SOUND: case P_PAD_FILE: case P_PRESET_SLOT: case P_PRESET_INFO:
+      return true;
+  }
+  return false;
+}
+
+// Every effect parameter back to its default (the knobs follow through display_rev), every tail cleared, every pad
+// and roll stopped. Release is switched off at once.
+void Panic(Instance* s) {
+  for (int p = 0; p < P_COUNT; ++p) {
+    s->trig_pending[p] = 0;
+    if (PanicKeeps(p) || kParamDefs[p].kind == K_TRIGGER) continue;
+    s->param[p] = s->smooth[p] = kParamDefs[p].def;
+  }
+  s->kill_amt = 0.0f;
+  s->midi_release = s->midi_kill_toggle = 0;
+  s->scene_latched_off = false;
+  s->iso.Init();
+  s->filter.Init();
+  s->echo.StartClear();
+  s->tape.Stop();
+  s->noise.Clear();
+  s->duck_env = 0.0f;
+  s->limiter.Init();
+  for (int i = 0; i < kNumReverbs; ++i) kReverbs[i]->mute(s->rv[i]);
+  s->rv_running = false;
+  s->rv_tail = 0;
+  s->clouds_mix = 0.0f;   // Clouds is off at its default; its own buffer is left to the next time it runs
+  s->clouds_trigger = false;
+  s->pads.StopAll();
+  for (int k = 0; k < rfx::PAD_COUNT; ++k) { s->roll_held[k] = false; s->roll_latched_was[k] = false; }
+  ++s->display_rev;
+}
+
 void ProcessSub(Instance* s, const int16_t* in, int16_t* out, int n) {
+  if (TakeTrigger(s, P_PANIC)) Panic(s);
+
+  // ---- a preset the worker read
+  char* preset = __atomic_exchange_n(&s->loaded_text, (char*)NULL, __ATOMIC_ACQ_REL);
+  if (preset) {
+    LoadState(s, preset, true);
+    free(__atomic_exchange_n(&s->retired_text, preset, __ATOMIC_ACQ_REL));   // the worker frees it (rarely us)
+    SetPresetStatus(s, s->loaded_slot, 2);
+  }
+  if (s->midi_kill_toggle) {
+    s->midi_kill_toggle = 0;
+    s->param[P_RELEASE] = Option(s, P_RELEASE) ? 0.0f : 1.0f;
+    ++s->display_rev;
+  }
+
   UpdateSmoothing(s);
   float build, brk;
   SceneAmounts(s, &build, &brk);
@@ -590,7 +809,9 @@ void ProcessSub(Instance* s, const int16_t* in, int16_t* out, int n) {
 
   // ---- triggers
   TakeTrigger(s, P_PAD_RELOAD);   // handled in SetParam (the worker loads)
-  if (TakeTrigger(s, P_RELEASE) || s->midi_release) { s->midi_release = 0; StartRelease(s); }
+  TakeTrigger(s, P_PRESET_SAVE);  // handled in SetParam / the worker
+  TakeTrigger(s, P_PRESET_LOAD);
+  if (TakeTrigger(s, P_RELEASE_GO) || s->midi_release) { s->midi_release = 0; StartRelease(s); }
   const int pad_params[rfx::PAD_COUNT] = { P_PAD_KICK, P_PAD_SNARE, P_PAD_CLAP, P_PAD_HAT };
   for (int k = 0; k < rfx::PAD_COUNT; ++k) {
     if (!TakeTrigger(s, pad_params[k])) continue;
@@ -613,8 +834,8 @@ void ProcessSub(Instance* s, const int16_t* in, int16_t* out, int n) {
   float* l = s->bl;
   float* r = s->br;
   for (int i = 0; i < n; ++i) {
-    l[i] = in[2 * i] * (in_gain / 32768.0f);
-    r[i] = in[2 * i + 1] * (in_gain / 32768.0f);
+    l[i] = s->dl[i] = in[2 * i] * (in_gain / 32768.0f);
+    r[i] = s->dr[i] = in[2 * i + 1] * (in_gain / 32768.0f);
   }
 
   // ---- isolator
@@ -694,11 +915,20 @@ void ProcessSub(Instance* s, const int16_t* in, int16_t* out, int n) {
   for (int i = 0; i < n; ++i) { s->sl[i] = l[i] * echo_send; s->sr[i] = r[i] * echo_send; }
   s->echo.Process(s->sl, s->sr, l, r, n, echo_delay, echo_fb);
 
-  // ---- noise riser
+  // ---- noise riser: its band sweeps up with Build Up, shifted by Tune; Duck pumps it under the input's hits
   float noise = s->smooth[P_SCENE_NOISE] * build * build * 0.15f;
+  float duck_amount = s->smooth[P_NOISE_MOD];
+  {
+    float peak = 0.0f;
+    for (int i = 0; i < n; ++i) peak = fmaxf(peak, fmaxf(fabsf(s->dl[i]), fabsf(s->dr[i])));
+    // attack within a sub-block, release about 150 ms (0.9952 per 32-frame step)
+    s->duck_env = peak > s->duck_env ? peak : s->duck_env * 0.9952f;
+  }
   if (noise > 0.0001f) {
-    s->noise.Set(300.0f * powf(8000.0f / 300.0f, build));
-    s->noise.Add(l, r, n, noise);
+    float tune = powf(2.0f, s->smooth[P_NOISE_TUNE] / 12.0f);
+    s->noise.Set(Clamp(300.0f * powf(8000.0f / 300.0f, build) * tune, 40.0f, 12000.0f));
+    float duck = 1.0f - duck_amount * Clamp(s->duck_env * 2.5f, 0.0f, 1.0f);
+    s->noise.Add(l, r, n, noise * duck);
   }
 
   // ---- reverb (Dragonfly)
@@ -731,8 +961,23 @@ void ProcessSub(Instance* s, const int16_t* in, int16_t* out, int n) {
     s->rv_gain = 0.0f;   // nothing ringing: switch at the next sub-block
   }
 
-  // ---- release tape, pads
+  // ---- release tape
   s->tape.Process(l, r, n);
+
+  // ---- Release (kill): crossfade the effect chain to the dry input. Hard: 5 ms (no click), Smooth: Release Beats.
+  float kill_target = Option(s, P_RELEASE) ? 1.0f : 0.0f;
+  if (s->kill_amt != kill_target || kill_target > 0.0f) {
+    float ramp = Option(s, P_KILL_MODE) ? kReleaseBeats[Clamp(Option(s, P_RELEASE_LEN), 0, 3)] * BeatSamples(s) : 220.5f;
+    float step = 1.0f / fmaxf(ramp, 1.0f);
+    for (int i = 0; i < n; ++i) {
+      s->kill_amt = kill_target > s->kill_amt ? fminf(kill_target, s->kill_amt + step) : fmaxf(kill_target, s->kill_amt - step);
+      float k = s->kill_amt * s->kill_amt * (3.0f - 2.0f * s->kill_amt);   // smoothstep: an even fade
+      l[i] += (s->dl[i] - l[i]) * k;
+      r[i] += (s->dr[i] - r[i]) * k;
+    }
+  }
+
+  // ---- pads (on top of everything: Release does not mute what you play)
   s->pads.Add(l, r, n, s->smooth[P_PAD_LEVEL]);
 
   // ---- brickwall limiter: Drive in, Ceiling out

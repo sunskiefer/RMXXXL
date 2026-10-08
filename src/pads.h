@@ -88,6 +88,11 @@ struct Pads {
     for (int i = 0; i < PAD_COUNT; ++i) if (v[i].sample) { v[i].stage = ENV_OFF; v[i].sample = NULL; }
   }
 
+  // Silences every voice at once (Panic).
+  void StopAll() {
+    for (int i = 0; i < PAD_COUNT; ++i) { v[i].stage = ENV_OFF; v[i].sample = NULL; v[i].env = 0.0f; }
+  }
+
   static void StartRelease(PadVoice& p) {
     p.stage = ENV_RELEASE;
     float r = fmaxf(p.adsr.r_ms, 1.0f) * 0.001f * kSampleRate;

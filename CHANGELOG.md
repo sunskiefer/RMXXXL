@@ -1,5 +1,41 @@
 # Changelog
 
+## 1.2.0
+Fixes from the first test on an Akai Force (MPC OS 3.9.1), and the features asked for after it.
+
+**Fixes**
+- **Screen pads and buttons fire on every tap.** A trigger kept reading back as pressed, so MPC's next tap only
+  released it and every second tap did nothing (it felt like a delay of seconds). Pads, Release FX, Trigger, Reload and
+  the new buttons now fire on each tap.
+- **Readable option lists.** The open lists (Echo Beat, Mode, Quality, Sound, Roll Beat) were drawn in a tiny dotted
+  font; they now use the same font and size as everything else.
+- **Q-Links on lists and switches** no longer race past the option you want: a list moves one option per three small
+  knob steps, an on/off switch per two. (Needs confirming on hardware.)
+- **Release** didn't kill the effect, it only played a release effect for a moment (see below).
+
+**New**
+- **Release is a kill switch** (REMIX, ON / OFF): on, the whole effect crossfades to the dry input and stays there; off,
+  it comes back exactly as it was. No parameter changes. **Hard** cuts in 5 ms, **Smooth** fades over Beats.
+- **RELEASE FX** has its own button (Echo Out / Vinyl Brake / Backspin, as before).
+- **PANIC**: every effect control back to factory settings, Release off, pads and rolls stopped, all tails cleared.
+  The pad setup (sounds, envelopes, level, tune, roll beat, MIDI root) stays.
+- **Presets**: 16 user slots on SETUP (Preset, SAVE, LOAD, status line), stored in `/sdcard/RMXXXL Presets`, pad
+  sounds and envelopes included.
+- **Noise riser**: Riser Tune (±24 semitones) and Riser Duck (ducks it under the incoming beat).
+- **MIDI**: root + 9 switches Release, root + 10 is Panic (root + 8 stays Release FX). The README and the INSTALL.md in
+  the release zip now explain the MIDI routing step by step.
+- **No more drop-downs covering the page**: Echo Beat, Clouds Mode, Quality and Roll Beat are always-visible button
+  grids, and the 16 preset slots are a grid too. Only the 17-entry pad Sound picker is still a list (it closes on a pick).
+- **Bigger controls**: larger knobs (as large as MPC's filmstrip limit allows), big ON / OFF switches, taller buttons
+  and option boxes.
+
+**Under the hood**
+- Framework (sd88me/mpc-vst-plugins) updated: one engine call at a time per instance, MIDI CC 20-35 / NRPN control.
+- Fixed an undefined integer shift in Clouds' looping sample player (no change in sound).
+- Q-Links: REMIX bank 2 now ends with Release and Hard / Smooth (Ceiling and Limit Drive stay on SETUP); SETUP gains
+  Riser Tune, Riser Duck, Noise and Preset on bank 2. MIDI CC 20-35 move the REMIX Q-Links.
+- The MIDI note table moved off the SETUP page into the docs.
+
 ## 1.1.1
 - All text on every page is one size (about 24 px), in MPC's own font (Titillium Web).
 

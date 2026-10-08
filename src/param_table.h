@@ -71,6 +71,15 @@ enum ParamId {
   P_ROLL_2,
   P_ROLL_3,
   P_ROLL_4,
+  P_KILL_MODE,
+  P_RELEASE_GO,
+  P_PANIC,
+  P_NOISE_TUNE,
+  P_NOISE_MOD,
+  P_PRESET_SLOT,
+  P_PRESET_SAVE,
+  P_PRESET_LOAD,
+  P_PRESET_INFO,
   P_COUNT
 };
 
@@ -82,7 +91,7 @@ static const ParamDef kParamDefs[P_COUNT] = {
   { "echo_send", 0.0f, 1.0f, 0.0f, K_CONT, 0 },
   { "echo_div", 0.0f, 7.0f, 3.0f, K_OPTION, 8 },
   { "release_fx", 0.0f, 2.0f, 1.0f, K_OPTION, 3 },
-  { "release", 0.0f, 1.0f, 0.0f, K_TRIGGER, 0 },
+  { "release", 0.0f, 1.0f, 0.0f, K_OPTION, 2 },
   { "iso_low", 0.0f, 1.0f, 0.5f, K_CONT, 0 },
   { "iso_mid", 0.0f, 1.0f, 0.5f, K_CONT, 0 },
   { "iso_high", 0.0f, 1.0f, 0.5f, K_CONT, 0 },
@@ -141,4 +150,13 @@ static const ParamDef kParamDefs[P_COUNT] = {
   { "roll_2", 0.0f, 1.0f, 0.0f, K_OPTION, 2 },
   { "roll_3", 0.0f, 1.0f, 0.0f, K_OPTION, 2 },
   { "roll_4", 0.0f, 1.0f, 0.0f, K_OPTION, 2 },
+  { "kill_mode", 0.0f, 1.0f, 0.0f, K_OPTION, 2 },
+  { "release_go", 0.0f, 1.0f, 0.0f, K_TRIGGER, 0 },
+  { "panic", 0.0f, 1.0f, 0.0f, K_TRIGGER, 0 },
+  { "noise_tune", -24.0f, 24.0f, 0.0f, K_CONT, 0 },
+  { "noise_mod", 0.0f, 1.0f, 0.0f, K_CONT, 0 },
+  { "preset_slot", 0.0f, 15.0f, 0.0f, K_OPTION, 16 },
+  { "preset_save", 0.0f, 1.0f, 0.0f, K_TRIGGER, 0 },
+  { "preset_load", 0.0f, 1.0f, 0.0f, K_TRIGGER, 0 },
+  { "preset_info", 0.0f, 1.0f, 0.0f, K_CONT, 0 },
 };

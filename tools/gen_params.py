@@ -21,7 +21,10 @@ def knob(key, name, lo=0.0, hi=1.0, default=0.0, unit=None, **kw):
 
 
 def opt(key, name, options, default=0, **kw):
-    p = {"key": key, "name": name, "options": list(options), "default": default}
+    # qlink_ticks (1.2): MPC sends a Q-Link turn as many small nudges, and each used to step a whole option, so a
+    # short turn raced through a list (Force test of 1.1.1). Lists step once per 3 nudges, on/off switches per 2.
+    p = {"key": key, "name": name, "options": list(options), "default": default,
+         "qlink_ticks": 2 if len(options) == 2 else 3}
     p.update(kw)
     return p
 
@@ -44,7 +47,7 @@ SECTIONS = [
         knob("echo_send", "Echo"),
         opt("echo_div", "Echo Beat", ["1/16", "1/8", "3/16", "1/4", "3/8", "1/2", "3/4", "1 Bar"], 3),
         opt("release_fx", "Release FX", ["Echo Out", "Vinyl Brake", "Backspin"], 1),
-        trig("release", "Release"),
+        opt("release", "Release", ONOFF, 0),   # 1.2: the kill switch (was a trigger, now Release FX Go)
     ]),
     ("Isolator", [
         knob("iso_low", "Low", default=0.5, dynamic_display=True),
@@ -120,6 +123,19 @@ SECTIONS = [
         opt("roll_2", "Roll 2", ONOFF, 0),
         opt("roll_3", "Roll 3", ONOFF, 0),
         opt("roll_4", "Roll 4", ONOFF, 0),
+    ]),
+    # 1.2: Release became a kill switch (Hard: a 5 ms cut to dry, Smooth: a fade over Release Beats; nothing else moves);
+    # the Release FX (Echo Out / Vinyl Brake / Backspin) has its own button; Panic; riser Tune / Duck; user presets.
+    ("Release / Presets", [
+        opt("kill_mode", "Release Mode", ["Hard", "Smooth"], 0),
+        trig("release_go", "Release FX Go"),
+        trig("panic", "Panic"),
+        knob("noise_tune", "Riser Tune", -24.0, 24.0, 0.0, "st", display="int"),
+        knob("noise_mod", "Riser Duck", default=0.0, dynamic_display=True),
+        opt("preset_slot", "Preset", [str(i) for i in range(1, 17)], 0),
+        trig("preset_save", "Save Preset"),
+        trig("preset_load", "Load Preset"),
+        knob("preset_info", "Preset Status", dynamic_display=True),
     ]),
 ]
 

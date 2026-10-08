@@ -1,32 +1,19 @@
 # Roadmap
 
-Changes planned after testing 1.1.1 on an Akai Force (MPC OS 3.9.1). Found a problem or have an idea? Open an
-[issue](../../issues).
+What the first test of 1.1.1 on an Akai Force (MPC OS 3.9.1) found, and where it stands. Found a problem or have an
+idea? Open an [issue](../../issues).
 
-## Bugs
-- **Screen pads are slow.** Pressing a pad or button on the touchscreen takes a few seconds to trigger the sound.
-- **Q-Links miss on mode selectors and on/off switches.** Changing them from a Q-Link is almost impossible
-  (for example Clouds On/Off).
-- **Mode selector text is unreadable.** The text in the selector boxes needs to be as big as the rest, or shown in
-  another readable way.
-- **Release doesn't kill everything.** It cuts the effect only for a moment, then the effect comes back (see the
-  new Release below).
+## Done in 1.2.0 (to confirm on hardware)
+- Screen pads and buttons needed several taps (fired on every second tap).
+- Option lists unreadable (tiny dotted font).
+- Q-Links raced through option lists; on/off switches hard to set from a Q-Link.
+- Release didn't kill everything: it is now an On/Off kill switch (Hard / Smooth), with Release FX on its own button.
+- Bigger knobs, buttons and switches.
+- Noise riser: Tune and Duck.
+- Panic button (factory settings, pad setup kept).
+- Presets (16 user slots, pads included).
+- MIDI routing explained in the README and in INSTALL.md.
 
-## Changes
-- **Bigger controls.** Scale up all buttons and all knobs.
-- **New Release: a kill switch.** Release becomes an On/Off switch:
-  - On: everything goes to the dry signal and stays dry until it is switched off again.
-  - Off: the effects come back exactly as they were.
-  - It never changes any parameters.
-  - Two kill modes: **Hard** (instant cut to dry) and **Smooth** (a transition from effects on to off).
+## Next
 - **Performance mode.** Change which parameters are shown (list to follow).
-- **Noise riser.** Add **Tune** and **Modulation** knobs. Modulation is a simple LFO or a ducker driven by the
-  incoming sound, whichever works best.
-
-## Performance
-- **Latency diagnosis and CPU tuning on the Force.** Plan: [docs/PERF_PLAN.md](docs/PERF_PLAN.md).
-
-## New features
-- **Panic button.** Resets the plugin to factory defaults, as freshly installed, whatever was saved in the project.
-  It also stops all sound and clears every tail.
-- **Presets.**
+- **Latency and CPU on the Force.** Plan: [docs/PERF_PLAN.md](docs/PERF_PLAN.md).

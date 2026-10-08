@@ -195,11 +195,15 @@ struct Echo {
 
   void Init(float* mem) {
     buf = mem; memset(buf, 0, sizeof(float) * kEchoLen * 2);
-    write = 0; delay = 22050.0f;
+    write = 0; delay = 22050.0f; clear_left = 0;
     damp.SetLowPass(5500.0f); rumble.SetLowPass(120.0f);
     damp.z[0] = damp.z[1] = rumble.z[0] = rumble.z[1] = 0.0f;
   }
   void Clear() { memset(buf, 0, sizeof(float) * kEchoLen * 2); damp.z[0] = damp.z[1] = rumble.z[0] = rumble.z[1] = 0.0f; }
+  // Panic: silent at once, the 2 MB buffer zeroed a slice per call (64 calls, ~46 ms) so no audio block pays for it all.
+  static const int kClearSlices = 64;
+  int clear_left;
+  void StartClear() { clear_left = kClearSlices; damp.z[0] = damp.z[1] = rumble.z[0] = rumble.z[1] = 0.0f; }
 
   inline void Read(float d, float* l, float* r) const {
     float pos = static_cast<float>(write) - d;
@@ -214,6 +218,12 @@ struct Echo {
   // send_l/r: what goes in; adds the wet echo to out_l/r. Ping-pong-free stereo echo with damped feedback.
   void Process(const float* send_l, const float* send_r, float* out_l, float* out_r, int n, float target_delay,
                float feedback) {
+    if (clear_left > 0) {
+      const int slice = kEchoLen * 2 / kClearSlices;
+      memset(buf + (kClearSlices - clear_left) * slice, 0, sizeof(float) * slice);
+      --clear_left;
+      return;
+    }
     target_delay = Clamp(target_delay, 64.0f, static_cast<float>(kEchoLen - 4));
     feedback = Clamp(feedback, 0.0f, 0.95f);
     for (int i = 0; i < n; ++i) {
@@ -255,6 +265,8 @@ struct Tape {
     buf = mem; memset(buf, 0, sizeof(float) * kTapeLen * 2);
     write = 0; active = false; fade = 1.0f; lp[0] = lp[1] = 0.0f; held[0] = held[1] = 0.0f;
   }
+
+  void Stop() { active = false; fade = 1.0f; }   // Panic: back to live at once (the recording itself is harmless)
 
   void Start(int k, float len_samples, float segment_samples, float fb) {
     kind = k;
@@ -376,6 +388,7 @@ struct Noise {
     seed[ch] ^= seed[ch] << 13; seed[ch] ^= seed[ch] >> 17; seed[ch] ^= seed[ch] << 5;
     return (static_cast<int32_t>(seed[ch]) * (1.0f / 2147483648.0f));
   }
+  void Clear() { memset(hps, 0, sizeof hps); memset(lps, 0, sizeof lps); }
   void Set(float hp_freq) { hp.HighPass(hp_freq, 0.9f); lp.LowPass(fminf(hp_freq * 6.0f, 16000.0f), 0.7f); }
   void Add(float* l, float* r, int n, float level) {
     if (level <= 0.0001f) return;

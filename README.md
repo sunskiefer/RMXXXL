@@ -1,15 +1,16 @@
-# RMXXXL v1.1.1
+# RMXXXL v1.2.0
 
 **An RMX-1000-style remix effect that runs natively inside MPC OS on the Akai Force.**
 
 RMXXXL is a VST2 insert effect for MPC OS's built-in plugin host, made by L'Cronx (shown on the device as
 **ANDREALPHEUS**). Put it on a track, a submix or the master and play the mix live: build-ups, breakdowns,
-filter sweeps, band kills, echoes, reverb washes, granular textures, drum and sample pads, and a Release button
-that snaps everything back. Everything sits in one insert slot, with its own touchscreen pages and Q-Link sets.
+filter sweeps, band kills, echoes, reverb washes, granular textures, drum and sample pads, a Release kill switch that
+drops everything back to dry, and a Panic button. Everything sits in one insert slot, with its own touchscreen pages and Q-Link sets.
 
 > [!NOTE]
-> **Status: 1.1.1, tested on an Akai Force** (MPC OS 3.9.1 with MockbaMod). It also passes its full test suite on
-> x86 (ASan + UBSan) and on the ARM build under QEMU. Report anything odd under [Issues](../../issues).
+> **Status: 1.2.0.** Version 1.1.1 was tested on an Akai Force (MPC OS 3.9.1 with MockbaMod); 1.2.0 fixes what that
+> test found (see the [changelog](CHANGELOG.md)) and passes the full test suite on x86 (ASan + UBSan). Report anything
+> odd under [Issues](../../issues).
 
 ![The REMIX page](docs/img/remix.png)
 
@@ -22,18 +23,59 @@ that snaps everything back. Everything sits in one insert slot, with its own tou
 - **Isolator:** 3-band Linkwitz-Riley 8th-order kill EQ with Mixxx's design and crossovers (246 Hz / 2.48 kHz).
 - **DJ filter:** one bipolar knob, low-pass to the left, high-pass to the right, with resonance.
 - **Echo:** synced to the MPC tempo, 1/16 to 1 bar, damped feedback.
-- **Release FX:** Echo Out, Vinyl Brake or Backspin over 1/2, 1, 2 or 4 beats.
+- **Release:** a kill switch. On, the whole effect goes to the dry input (Hard: instant, Smooth: a fade over 1/2 to 4
+  beats) and stays there; off, everything comes back as it was. No knob moves.
+- **Release FX:** Echo Out, Vinyl Brake or Backspin over 1/2, 1, 2 or 4 beats, on its own button.
+- **Panic:** one tap back to factory settings, every tail cleared; your pad setup stays.
+- **Presets:** 16 slots of your own, saved on the device, pad sounds and envelopes included.
 - **Clouds:** Mutable Instruments Clouds with the Parasites firmware, all six modes (granular, stretch, looping
   delay, spectral, Oliverb, Resonestor).
 - **Reverb:** Dragonfly Plate, Room and Hall inside the plugin, or Clouds' own reverb as the light option.
 - **Pads:** four pads from the screen, MIDI or latching rolls; each has its own ADSR and plays its built-in drum
   or one of 16 swappable WAV one-shots.
+- **Noise riser:** with Tune (±24 semitones) and Duck (pumps it under the incoming beat).
 - **Brickwall limiter:** look-ahead, Drive in, Ceiling out.
-- **Skin:** black, BLACK and GREY knob art on a tick scale, all text in one size.
+- **Skin:** black, BLACK and GREY knob art on a tick scale, big buttons and switches, all text (lists included) in
+  one readable size.
+- **MIDI:** play the pads, rolls, Release FX, Release and Panic from a MIDI track (below).
 
 | | | |
 | --- | --- | --- |
 | ![CLOUDS](docs/img/clouds.png) | ![REVERB / PADS](docs/img/reverb-pads.png) | ![PADS](docs/img/pads.png) |
+
+## MIDI: playing RMXXXL from a MIDI track
+
+MPC OS doesn't send MIDI to insert effects, so each RMXXXL instance opens **its own MIDI input port**, `RMXXXL 1`
+(then `RMXXXL 2`, ... for more instances). A MIDI track sends its notes to that port; RMXXXL keeps processing the audio
+of whatever track or master it is inserted on.
+
+```
+ MIDI track (pads / clip)  --MIDI Out-->  port "RMXXXL 1"  -->  RMXXXL (inserted on a track, submix or the master)
+```
+
+**Setup, once per project**
+
+1. Insert **RMXXXL** on the track, submix or master you want to effect.
+2. Create a **MIDI track** (no instrument needed).
+3. Set the MIDI track's **MIDI output port** to **`RMXXXL 1`** (any channel: RMXXXL listens to all 16). If the list
+   shows `RMXXXL 2` or higher, the plugin was inserted more than once this session: pick the number that's listed.
+4. Select the MIDI track and play its pads, or record / draw notes in its clips.
+5. Line the notes up with your pads: use a **chromatic** pad layout, then set **MIDI Root** (REVERB / PADS page,
+   default **36 = C1**, MPC numbering where 60 = C3) to the note of the pad you want as Pad 1.
+
+**Note map** (from MIDI Root)
+
+| Default note | Offset | Action |
+| --- | --- | --- |
+| 36–39 (C1–D#1) | +0..+3 | Pads 1–4, one-shot, velocity = level |
+| 40–43 (E1–G1) | +4..+7 | Pads 1–4 as rolls while held, at Roll Beat, locked to the tempo |
+| 44 (G#1) | +8 | Release FX (Echo Out / Brake / Backspin) |
+| 45 (A1) | +9 | Release on / off (each note switches it) |
+| 46 (A#1) | +10 | Panic |
+
+**If nothing happens:** the port only exists while RMXXXL is inserted; after removing and re-inserting it the number
+can change (re-select it on the MIDI track); and the notes must land between MIDI Root and MIDI Root + 10. The
+[user guide](docs/USER_GUIDE.md#midi-playing-the-pads-from-a-midi-track) has the full walkthrough.
 
 ## Documentation
 
@@ -66,8 +108,8 @@ to `/sdcard/Synths/ANDREALPHEUS - VST - RMXXXL/`, backs up and edits `MPC.settin
 Running it again upgrades in place. Then insert **RMXXXL** (manufacturer ANDREALPHEUS) on a track, submix or the
 master. `uninstall.sh` removes it the same way.
 
-Pad samples go in `/sdcard/RMXXXL Samples` (created on first load), outside the plugin folder, so they survive
-updates.
+Pad samples go in `/sdcard/RMXXXL Samples` (created on first load) and presets in `/sdcard/RMXXXL Presets`, both
+outside the plugin folder, so they survive updates.
 
 ## Building
 
@@ -103,8 +145,8 @@ Reverb. Third-party components keep their own licenses (below).
 - **Isolator and filter:** designs follow [Mixxx](https://github.com/mixxxdj/mixxx) 2.5 (GPL-2.0-or-later):
   `linkwitzriley8eqeffect.cpp`, `enginefilterlinkwitzriley8.cpp`, `filtereffect.cpp`, re-implemented here.
 - **Clouds:** Emilie Gillet (Mutable Instruments), with Matthias Puech's Parasites firmware (MIT). MPC OS port by
-  FullPace ([overcast](https://github.com/FullPace/overcast)), vendored from there; one local fix in
-  `clouds/dsp/correlator.cc` (an undefined shift by 32).
+  FullPace ([overcast](https://github.com/FullPace/overcast)), vendored from there; two local fixes for undefined
+  shifts (`clouds/dsp/correlator.cc`, `clouds/dsp/looping_sample_player.h`), same results.
 - **MIDI input port and Clouds engine glue:** after FullPace's [overcast](https://github.com/FullPace/overcast) (MIT).
 - **Reverbs:** Dragonfly Reverb by Michael Willis and Rob van den Berg, built on freeverb3 by Teru Kamogashira
   (GPL-3.0-or-later). MPC OS port by gmorb ([mpc-vst-dragonfly](https://github.com/gmorb/mpc-vst-dragonfly)),

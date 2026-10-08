@@ -6,7 +6,7 @@ RMXXXL v.1 by ANDREALPHEUS is a performance remix effect in the spirit of the Pi
 
 Put it on a track, a submix or the master, and play the mix live with big macro moves: build-ups, breakdowns, filter sweeps, band kills, echoes, reverb washes, granular textures, drum and sample hits and a release button that snaps everything back.
 
-Status: version 1.1.1 is tested on an Akai Force (MPC OS 3.9.1 with MockbaMod), and passes its offline tests (x86 and the ARM build under emulation). The other Gen1 units are untested.
+Status: version 1.2.0. Version 1.1.1 was tested on an Akai Force (MPC OS 3.9.1 with MockbaMod); 1.2.0 fixes what that test found and passes the offline tests (x86 and the ARM build under emulation). The other Gen1 units are untested.
 
 **Signal flow**, in order:
 
@@ -14,11 +14,12 @@ Status: version 1.1.1 is tested on an Akai Force (MPC OS 3.9.1 with MockbaMod), 
 2. **Isolator**: 3-band kill EQ (Low / Mid / High), Linkwitz-Riley 8th order, as in Mixxx.
 3. **Filter**: one bipolar knob, low-pass to the left and high-pass to the right, with resonance, as in Mixxx.
 4. **Clouds**: the Mutable Instruments Clouds granular processor with the Parasites firmware, six modes.
-5. **Echo**: tempo-synced, plus the noise riser used by Build Up.
+5. **Echo**: tempo-synced, plus the noise riser used by Build Up (with its own Tune and Duck).
 6. **Reverb**: Dragonfly Plate, Room or Hall, or Clouds' own reverb.
-7. **Release tape**: Echo Out, Vinyl Brake or Backspin.
-8. **Pads**: four pads (built-in drums or your samples), each with its own ADSR, played over the top.
-9. **Brickwall limiter**: Drive in, Ceiling out.
+7. **Release FX tape**: Echo Out, Vinyl Brake or Backspin.
+8. **Release**: the kill switch. On, everything above is crossfaded away to the dry input.
+9. **Pads**: four pads (built-in drums or your samples), each with its own ADSR, played over the top.
+10. **Brickwall limiter**: Drive in, Ceiling out.
 
 **Scene FX** are the heart of it. **Build Up** raises a high-pass filter, feeds the echo and reverb and brings in a noise riser. **Break Down** closes a low-pass filter and washes the sound into echo and reverb. One knob each moves all of those at once.
 
@@ -69,15 +70,21 @@ Each page has a top row and a bottom row of controls. Turn knobs on the touchscr
 | Echo | Echo send amount |
 | Echo Beat | Echo time: 1/16, 1/8, 3/16, 1/4, 3/8, 1/2, 3/4 or 1 bar, following the MPC tempo |
 | Reverb | Reverb send amount (type and character are set on the REVERB page) |
-| Release | Fires the selected Release FX |
+| Release (ON / OFF) | The kill switch. **On**: the whole effect goes to the dry input and stays dry. **Off**: the effects come back exactly as they were. It never moves a knob |
+| Hard / Smooth | How Release switches. **Hard**: an instant cut (5 ms, no click). **Smooth**: a fade over **Beats**, both ways |
 | Low / Mid / High | Isolator bands. Fully left = Kill, centre = unchanged, fully right = +6 dB |
-| Release FX | Echo Out (repeats the last echo beat and fades), Brake (vinyl stop) or Backspin |
-| Beats | Release length: 1/2, 1, 2 or 4 beats |
+| Release FX (list) | Echo Out (repeats the last echo beat and fades), Brake (vinyl stop) or Backspin |
+| Beats | Length of the Release FX and of a Smooth Release: 1/2, 1, 2 or 4 beats |
+| RELEASE FX (button) | Fires the selected Release FX |
+| PANIC | Back to factory settings at once (see below) |
 | Feedback | Echo feedback; Build Up and Break Down add more on top |
 | Noise | How much noise riser Build Up brings in |
-| Ceiling | Limiter ceiling: the output never goes above this level |
 
-After **Release**, Build Up and Break Down are latched off, like the RMX snapping back to dry. Turn both knobs back to zero to re-arm them.
+While Release is on, the effects keep running underneath (echoes keep repeating, the reverb keeps ringing), so switching it off drops you straight back into the mix as it was. The pads are not muted: you can keep playing them over the dry signal.
+
+After the **RELEASE FX** button, Build Up and Break Down are latched off, like the RMX snapping back to dry. Turn both knobs back to zero to re-arm them.
+
+**PANIC** puts every effect control back to its factory value (as a freshly installed RMXXXL, whatever the project saved), switches Release off, stops the pads and rolls, and clears every echo, reverb and release tail. Your pad setup stays: each pad's sound and envelope, Pad Level, Pad Tune, Roll Beat and MIDI Root, and the preset slot.
 
 ### CLOUDS
 
@@ -159,43 +166,80 @@ Supported: WAV, 8/16/24/32-bit or 32-bit float, mono or stereo, any sample rate,
 | In Gain | Input trim, −18 to +6 dB |
 | Low Xover, High Xover | Isolator crossover points (defaults 246 Hz and 2.48 kHz, as in Mixxx) |
 | Build HPF, Break LPF | How far the Build Up high-pass and the Break Down low-pass go |
+| Preset, SAVE, LOAD | User presets (below) |
+| Riser Tune | Shifts the noise riser's band, ±24 semitones |
+| Riser Duck | Pumps the riser under the beat: the louder the incoming hits, the more it ducks (0 = off) |
+| Noise | How much noise riser Build Up brings in (same control as on REMIX) |
 
 The limiter looks 1.45 ms ahead, so it catches peaks cleanly. That adds 1.45 ms of latency, far below anything you'd hear as a timing shift.
 
-## MIDI setup
+### Presets
 
-To play the pads, rolls and Release from the Force's pads or a sequence, send MIDI from a MIDI track to the plugin's own MIDI input.
+RMXXXL keeps 16 preset slots of its own. MPC has no "save preset" for an insert effect, so they live in the plugin:
 
-MPC OS sends no MIDI to insert effects. So every RMXXXL instance opens its own MIDI input port, named **RMXXXL 1**, **RMXXXL 2** and so on. MPC detects it without a restart.
+1. Pick a slot in **Preset** (1–16). The line below says **STORED** or **EMPTY**.
+2. **SAVE** stores everything as it is now in that slot, pad sounds and envelopes included. The line says **SAVED**.
+3. **LOAD** brings it back. The line says **LOADED**, and the knobs on every page move to the stored values.
 
-**Set it up**
+A preset leaves **Release** alone: loading one never kills or un-kills the sound. The slots are files in **/sdcard/RMXXXL Presets** (`Preset 01.txt` to `Preset 16.txt`), next to the samples folder. They survive updates, and you can copy them to another device or back them up. The Force has no keyboard on plugin screens, so slots are numbered, not named. Save overwrites a slot without asking, so pick the slot first.
 
-1. Insert RMXXXL on the track (or master) you want to effect.
-2. Create a MIDI track.
-3. Set that MIDI track's MIDI output to **RMXXXL 1**.
-4. Play the pads or program a pattern on the MIDI track.
+## MIDI: playing the pads from a MIDI track
 
-Ports are numbered in the order instances open during an MPC session. If you remove the plugin and insert it again, it may come up as **RMXXXL 2**; pick the number that's in the list. After an MPC restart, numbering starts at 1 again.
+MPC OS doesn't send MIDI to insert effects. So that you can still play the pads, rolls, Release FX, Release and Panic from the Force's pads or from a sequence, every RMXXXL instance opens **its own MIDI input port**. You route a MIDI track to that port.
 
-**Note map**
+### How the routing works
 
-Notes count up from **MIDI Root** (REVERB / PADS page, default 36 = C1 in MPC numbering, where note 60 = C3).
+```
+ MIDI track (pads / clip)  --MIDI Out-->  port "RMXXXL 1"  -->  RMXXXL (inserted on any track or the master)
+```
 
-| Note (default) | Offset from root | Action |
+- The port appears as soon as RMXXXL is inserted, with no MPC restart. The first instance is **RMXXXL 1**, the next **RMXXXL 2**, and so on.
+- The audio and the MIDI are separate. RMXXXL processes the audio of the track or master it's inserted on. The MIDI track only plays it: it makes no sound of its own and doesn't need to be on the same track.
+- Any MIDI channel works. RMXXXL listens to all 16.
+
+### Set it up (once per project)
+
+1. **Insert RMXXXL** on the track, submix or master you want to effect.
+2. **Create a MIDI track.** This is the "controller" track. It doesn't need an instrument.
+3. **Set the MIDI track's MIDI output port to `RMXXXL 1`.** It's listed with the other MIDI output ports in the track's MIDI output setting. The channel doesn't matter. If you only see `RMXXXL 2` or higher, pick that one (see *Port numbers* below).
+4. **Select the MIDI track and play its pads.** Pad 1 of RMXXXL answers to the **MIDI Root** note (default **36 = C1**), and the actions after it are on the notes above (table below).
+5. **Match the notes to your pads.** If your pad layout uses a scale, choose a chromatic one, so the pads go up one note at a time. Then set **MIDI Root** (REVERB / PADS page, shown as a note name, e.g. C1) to the note of the pad you want as Pad 1. Changing MIDI Root is easier than remapping the Force's pads.
+6. **Record or draw** the notes in the MIDI track's clips to sequence hits, rolls and releases with the song.
+
+### Note map
+
+The notes count up from **MIDI Root**. Defaults are shown in MPC's numbering, where note 60 = C3.
+
+| Note (default) | Offset | Action |
 | --- | --- | --- |
 | 36 (C1) | +0 | Pad 1 |
 | 37 (C#1) | +1 | Pad 2 |
 | 38 (D1) | +2 | Pad 3 |
 | 39 (D#1) | +3 | Pad 4 |
-| 40 (E1) | +4 | Pad 1 roll, while held |
+| 40 (E1) | +4 | Pad 1 roll, while the note is held |
 | 41 (F1) | +5 | Pad 2 roll, while held |
 | 42 (F#1) | +6 | Pad 3 roll, while held |
 | 43 (G1) | +7 | Pad 4 roll, while held |
-| 44 (G#1) | +8 | Release |
+| 44 (G#1) | +8 | Release FX (fires Echo Out / Brake / Backspin) |
+| 45 (A1) | +9 | Release on / off (each note switches it) |
+| 46 (A#1) | +10 | Panic |
 
-Velocity sets the hit's level. Each pad plays its chosen sound (built-in drum or sample slot) one-shot, through its ADSR, so a short tap plays the whole sound. Rolls repeat at the **Roll Beat** rate and follow the MPC tempo.
+- **Velocity** sets a pad's level. Pads play **one-shot**: a short note plays the whole sound through the pad's ADSR.
+- **Rolls** repeat at **Roll Beat** (1/8 to 1/32, triplets too), locked to the MPC tempo, for as long as the note is held.
+- **Release** (+9) switches on each note-on, so one tap kills to dry and the next tap brings the effects back.
 
-If your pads send different notes, change **MIDI Root** so the first pad you want lands on +0, rather than remapping the pads.
+### Port numbers
+
+The ports are numbered in the order instances open during an MPC session. Remove RMXXXL and insert it again, and it may come up as `RMXXXL 2`. Point the MIDI track at the number in the list. After an MPC restart the numbering starts at 1 again. With two RMXXXL instances, each has its own port, so two MIDI tracks can play them separately.
+
+### If nothing happens
+
+| What you see | What to check |
+| --- | --- |
+| No `RMXXXL` port in the list | RMXXXL must be inserted first. Look for a higher number (`RMXXXL 2`) |
+| The port is selected, but the pads do nothing | The notes you play are below MIDI Root or more than 10 above it. Set MIDI Root to your first pad's note |
+| The wrong pad or action plays | MIDI Root is off by a few notes. Use a chromatic layout and set MIDI Root to the first pad |
+| It worked, then stopped after re-inserting the plugin | The port number changed. Re-select the port on the MIDI track |
 
 ## Q-Links
 
@@ -204,7 +248,7 @@ RMXXXL comes with its Q-Links already mapped, so there's nothing to assign. Each
 MPC reads two kinds of map from the plugin:
 
 - **Screen mode**: the Q-Links follow the page on screen. Each page has its own set (tables below).
-- **Track / program mode**: one fixed set, whatever page is showing. RMXXXL uses the REMIX set for this, with Limit Drive in the last slot, so the performance controls stay under your hands.
+- **Track / program mode**: one fixed set, whatever page is showing. RMXXXL uses the REMIX set for this, so the performance controls stay under your hands.
 
 Which of the two you get depends on the Q-Link mode selected on the device. Choosing the mode is MPC's own setting, not part of the plugin.
 
@@ -213,7 +257,7 @@ Which of the two you get depends on the Q-Link mode selected on the device. Choo
 | Bank | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | Build Up | Break Down | Filter | Echo | Low | Mid | High | Reverb |
-| 2 | Resonance | Feedback | Echo Beat | Release FX | Beats | Noise | Ceiling | Limit Drive |
+| 2 | Resonance | Feedback | Echo Beat | Release FX | Beats | Noise | Release | Hard / Smooth |
 
 **CLOUDS**
 
@@ -242,10 +286,11 @@ The ADSR Q-Links follow the selected pad, the same as the knobs on screen.
 | Bank | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | Limit Drive | Ceiling | Release | In Gain | Low Xover | High Xover | Build HPF | Break LPF |
+| 2 | Riser Tune | Riser Duck | Noise | Preset | — | — | — | — |
 
-On knobs that pick from a list (Echo Beat, Release FX, Mode, Type and so on), each knob click moves one option.
+On knobs that pick from a list (Echo Beat, Release FX, Mode, Type and so on), it takes a short, deliberate turn to move one option (three small knob steps), so a turn doesn't race past the one you want. On/off switches (Clouds, Freeze, Reverse, Release) take two steps: turn right for on, left for off. The data wheel steps the same way.
 
-Release and the pad hits are deliberately not on Q-Links, because a knob turn would fire them over and over. Use the screen buttons or MIDI for those.
+The pad hits, RELEASE FX, PANIC, SAVE and LOAD are deliberately not on Q-Links, because a knob turn would fire them over and over. Use the screen buttons or MIDI for those.
 
 The Q-Link display shows the control's name. On the CLOUDS page the names follow the selected mode, for example Size reads **Loop Size** in Loop Delay mode.
 
@@ -266,9 +311,12 @@ If your unit has no `acvs` service, use `inmusic-mpc` instead. A crash shows up 
 | Old screen or old behaviour after an update | MPC keeps skins in memory and keeps a plugin loaded while any instance exists, undo history included. Save, then restart MPC (the installer does this) |
 | Crackles, clicks or dropouts | CPU overload; see the CPU tips below |
 | No sound, or very quiet | Check Ceiling (SETUP), the isolator knobs (fully left = Kill), the Filter (far left or right nearly closes it) and In Gain |
-| Build Up / Break Down do nothing | They are latched off after a Release. Turn both to zero, then up again |
-| No RMXXXL port for the MIDI track | The plugin must be inserted first. Check for a higher number (RMXXXL 2); a restart resets the numbering |
-| Pads play the wrong sound | Set MIDI Root so your first pad lands on +0 (MIDI setup) |
+| Build Up / Break Down do nothing | They are latched off after a Release FX. Turn both to zero, then up again |
+| Everything sounds dry, no effect works | **Release** is on (REMIX page, top right). Switch it off |
+| Screen pads or buttons need two taps | Fixed in 1.2.0: update |
+| No RMXXXL port for the MIDI track | See "If nothing happens" under MIDI |
+| Pads play the wrong sound | Set MIDI Root so your first pad lands on +0 (MIDI section) |
+| A preset says SAVE FAILED | The card or internal storage is full or read-only. Check `/sdcard/RMXXXL Presets` over SSH |
 | Echo or rolls out of time | They follow the MPC tempo; check the project BPM |
 | Clouds mode change seems ignored | A mode or quality change applies within 0.5 s, by design |
 

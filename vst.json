@@ -2,7 +2,7 @@
   "name": "RMXXXL",
   "vendor": "ANDREALPHEUS",
   "uid": "AnRx",
-  "version": 1101,
+  "version": 1200,
   "so": "rmxxxl.so",
   "params": "params.json",
   "effect": true,

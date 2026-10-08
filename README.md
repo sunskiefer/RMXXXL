@@ -41,6 +41,7 @@ that snaps everything back. Everything sits in one insert slot, with its own tou
 | --- | --- |
 | [User guide](docs/USER_GUIDE.md) | Install, every page and control, MIDI, Q-Links, samples, troubleshooting |
 | [Changelog](CHANGELOG.md) | What changed in each version |
+| [Roadmap](ROADMAP.md) | Bugs and changes planned for the next versions |
 
 ## Requirements
 

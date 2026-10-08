@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.1
+- Fix: the big knobs (Build Up, Break Down, Filter, Low / Mid / High, Reverb on its page, the ADSR, Limit Drive and
+  Ceiling) slid up and down on the Force instead of turning. Their 1.2.0 filmstrip was 16384 px tall, MPC's limit;
+  they are back to the 1.1.1 size, which draws right on the device.
+
 ## 1.2.0
 Fixes from the first test on an Akai Force (MPC OS 3.9.1), and the features asked for after it.
 

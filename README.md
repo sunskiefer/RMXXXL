@@ -1,4 +1,4 @@
-# RMXXXL v1.2.0
+# RMXXXL v1.2.1
 
 **An RMX-1000-style remix effect that runs natively inside MPC OS on the Akai Force.**
 
@@ -8,7 +8,7 @@ filter sweeps, band kills, echoes, reverb washes, granular textures, drum and sa
 drops everything back to dry, and a Panic button. Everything sits in one insert slot, with its own touchscreen pages and Q-Link sets.
 
 > [!NOTE]
-> **Status: 1.2.0, tested on an Akai Force** (MPC OS 3.9.1 with MockbaMod). It fixes what the 1.1.1 test found (see
+> **Status: 1.2.1.** 1.2.0 was tested on an Akai Force (MPC OS 3.9.1 with MockbaMod); 1.2.1 fixes its big knobs. It fixes what the 1.1.1 test found (see
 > the [changelog](CHANGELOG.md)) and passes the full test suite on x86 (ASan + UBSan). Report anything odd under
 > [Issues](../../issues).
 

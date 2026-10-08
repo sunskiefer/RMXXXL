@@ -6,8 +6,8 @@
 gen_vst.py writes one filmstrip per knob radius (sh_knob_r<R>.png: 128 square frames of 2R+10 px, stacked down, on the
 page colour). This rebuilds each from art/:
   - art/knob_tick.png         the scale (ticks), under every knob, in place of the drawn orange dot ring
-  - art/knob_black_strip.png  101 frames, 150 px: the main controls (radius >= 57 in layout.conf)
-  - art/knob_grey_strip.png   101 frames, 80 px: everything else (radius < 57)
+  - art/knob_black_strip.png  101 frames, 150 px: the main controls (radius >= 55 in layout.conf)
+  - art/knob_grey_strip.png   101 frames, 80 px: everything else (radius < 55)
 The knob is scaled to sit just inside the ticks. Frames are resampled 101 -> 128, minimum first, as MPC expects.
 """
 import os
@@ -20,7 +20,7 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 ART = os.path.join(ROOT, "art")
 FRAMES = 128
 PAGE = (0, 0, 0)          # layout.conf theme_panel: the strips are opaque, drawn on the page colour
-MAIN_RADIUS = 57          # radius >= this -> BLACK (layout.conf: main knobs r=59, others r=54; r <= 59 keeps a filmstrip under 16384 px)
+MAIN_RADIUS = 55          # radius >= this -> BLACK (layout.conf: main knobs r=56, others r=54). r=59 (a 16384 px strip) drifted on a Force (1.2.0): stay at r <= 56 (15616 px, verified in 1.1.1)
 
 
 def body_radius(strip, size):

@@ -2,7 +2,7 @@
 
 Put it on a track, a submix or the master and play the mix live: build-ups, breakdowns, filter sweeps, band kills, echoes, reverb washes, granular textures, drum and sample pads, a Release kill switch that drops everything back to dry, and a Panic button. Everything sits in one insert slot, with its own touchscreen pages and Q-Link sets.
 
-> **1.2.0** fixes what the first Force test (1.1.1, MPC OS 3.9.1 with MockbaMod) found: screen pads and buttons now fire on every tap, option lists are readable, Q-Links no longer race through lists, controls are bigger. New: Release kill switch, separate Release FX button, Panic, 16 user presets, riser Tune / Duck. As with any third-party plugin, save your projects before installing, and report problems under **Issues**. Full list: [CHANGELOG](https://github.com/sunskiefer/RMXXXL/blob/main/CHANGELOG.md).
+> ✅ **1.2.0 is tested on an Akai Force** (MPC OS 3.9.1 with MockbaMod). It fixes what the first Force test (1.1.1, MPC OS 3.9.1 with MockbaMod) found: screen pads and buttons now fire on every tap, option lists are readable, Q-Links no longer race through lists, controls are bigger. New: Release kill switch, separate Release FX button, Panic, 16 user presets, riser Tune / Duck. As with any third-party plugin, save your projects before installing, and report problems under **Issues**. Full list: [CHANGELOG](https://github.com/sunskiefer/RMXXXL/blob/main/CHANGELOG.md).
 
 ## How you play it
 1. **Shape the mix** with the isolator (Low / Mid / High, fully left = kill) and the DJ filter (left = low-pass, right = high-pass).

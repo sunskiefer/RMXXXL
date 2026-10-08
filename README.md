@@ -8,9 +8,9 @@ filter sweeps, band kills, echoes, reverb washes, granular textures, drum and sa
 drops everything back to dry, and a Panic button. Everything sits in one insert slot, with its own touchscreen pages and Q-Link sets.
 
 > [!NOTE]
-> **Status: 1.2.0.** Version 1.1.1 was tested on an Akai Force (MPC OS 3.9.1 with MockbaMod); 1.2.0 fixes what that
-> test found (see the [changelog](CHANGELOG.md)) and passes the full test suite on x86 (ASan + UBSan). Report anything
-> odd under [Issues](../../issues).
+> **Status: 1.2.0, tested on an Akai Force** (MPC OS 3.9.1 with MockbaMod). It fixes what the 1.1.1 test found (see
+> the [changelog](CHANGELOG.md)) and passes the full test suite on x86 (ASan + UBSan). Report anything odd under
+> [Issues](../../issues).
 
 ![The REMIX page](docs/img/remix.png)
 

@@ -3,7 +3,7 @@
 What the first test of 1.1.1 on an Akai Force (MPC OS 3.9.1) found, and where it stands. Found a problem or have an
 idea? Open an [issue](../../issues).
 
-## Done in 1.2.0 (to confirm on hardware)
+## Done in 1.2.0 (installed and working on the Force, 2026-10-08)
 - Screen pads and buttons needed several taps (fired on every second tap).
 - Option lists unreadable (tiny dotted font).
 - Q-Links raced through option lists; on/off switches hard to set from a Q-Link.

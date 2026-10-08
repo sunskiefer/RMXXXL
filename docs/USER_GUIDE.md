@@ -68,7 +68,7 @@ Each page has a top row and a bottom row of controls. Turn knobs on the touchscr
 | Filter | Centre = off. Left = low-pass sweeping down, right = high-pass sweeping up |
 | Resonance | Filter resonance, Q 0.4 to 4 (automatically limited when both filters are close) |
 | Echo | Echo send amount |
-| Echo Beat | Echo time: 1/16, 1/8, 3/16, 1/4, 3/8, 1/2, 3/4 or 1 bar, following the MPC tempo |
+| Echo Beat | Echo time: 1/16, 1/8, 3/16, 1/4, 3/8, 1/2, 3/4 or 1 bar, following the MPC tempo (button row) |
 | Reverb | Reverb send amount (type and character are set on the REVERB page) |
 | Release (ON / OFF) | The kill switch. **On**: the whole effect goes to the dry input and stays dry. **Off**: the effects come back exactly as they were. It never moves a knob |
 | Hard / Smooth | How Release switches. **Hard**: an instant cut (5 ms, no click). **Smooth**: a fade over **Beats**, both ways |
@@ -78,7 +78,9 @@ Each page has a top row and a bottom row of controls. Turn knobs on the touchscr
 | RELEASE FX (button) | Fires the selected Release FX |
 | PANIC | Back to factory settings at once (see below) |
 | Feedback | Echo feedback; Build Up and Break Down add more on top |
-| Noise | How much noise riser Build Up brings in |
+
+The lower half is one panel of big buttons: **Echo Beat** (1/16 to 1 bar), **Release FX** and **Beats**, then the
+**RELEASE FX** and **PANIC** buttons. The riser's Noise amount, Tune and Duck are on SETUP (and Noise on a REMIX Q-Link).
 
 While Release is on, the effects keep running underneath (echoes keep repeating, the reverb keeps ringing), so switching it off drops you straight back into the mix as it was. The pads are not muted: you can keep playing them over the dry signal.
 

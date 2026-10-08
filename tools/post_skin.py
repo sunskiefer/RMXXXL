@@ -32,6 +32,9 @@ PAD_W, PAD_H = 250, 110
 ACCENT, ACCENT_HI, INK, INK_DIM = "ff8a1f", "ffb15c", "ececec", "9a9a9a"
 
 
+BTN_SIZES = {}   # key -> (w, h), from "#@btn key=<param> w= h=" lines in layout.conf
+
+
 def font(px):
     return ImageFont.truetype(FONT, px)
 
@@ -61,14 +64,16 @@ def draw_button(path, w, h, label, pad):
         dr.rounded_rectangle((1, 1, w - 2, h - 2), radius=10, fill="#" + ACCENT, outline="#" + ACCENT_HI, width=2)
         text_center(dr, w / 2, h / 2, label, 44, "111111")
     else:
+        fill, fill_hi, ink = (("d23a2a", "ff5a48", "ffffff") if label == "PANIC" else (ACCENT, ACCENT_HI, "111111"))
+        px = TEXT_PX + 6 if h >= 64 else TEXT_PX   # the big performance buttons read from further away
         off = Image.new("RGB", (w, h), (0, 0, 0))
         dr = ImageDraw.Draw(off)
-        dr.rounded_rectangle((0, 0, w - 1, h - 1), radius=6, fill="#" + ACCENT)
-        text_center(dr, w / 2, h / 2, label, TEXT_PX, "111111")
+        dr.rounded_rectangle((0, 0, w - 1, h - 1), radius=8, fill="#" + fill)
+        text_center(dr, w / 2, h / 2, label, px, ink)
         on = Image.new("RGB", (w, h), (0, 0, 0))
         dr = ImageDraw.Draw(on)
-        dr.rounded_rectangle((0, 0, w - 1, h - 1), radius=6, fill="#" + ACCENT_HI)
-        text_center(dr, w / 2, h / 2, label, TEXT_PX, "111111")
+        dr.rounded_rectangle((0, 0, w - 1, h - 1), radius=8, fill="#" + fill_hi)
+        text_center(dr, w / 2, h / 2, label, px, ink)
     off.save(path + "_off.png")
     on.save(path + "_on.png")
 
@@ -96,9 +101,10 @@ def fix_buttons(skin, tui):
         label = places[0]["componentData"]["name"]
         _, _, w, h = (int(v) for v in btn["bounds"]["bounds"].split())
         pad = label.isdigit()
+        big = next((v for k, v in BTN_SIZES.items() if key.startswith("shTrig_%s_" % k)), None)   # "#@btn" lines
         f = font(TEXT_PX)
         tw = int(ImageDraw.Draw(Image.new("RGB", (1, 1))).textlength(label, font=f))
-        nw, nh = (PAD_W, PAD_H) if pad else (max(w, tw + 40, BTN_W), max(h, BTN_H))
+        nw, nh = (PAD_W, PAD_H) if pad else big if big else (max(w, tw + 40, BTN_W), max(h, BTN_H))
         set_bounds(comps, nw, nh)
         for c in places:   # keep each placement centred where the layout put it
             x, y, pw, ph = (int(v) for v in c["bounds"]["bounds"].split())
@@ -247,6 +253,10 @@ def main():
     global TEXT_PX
     m = re.search(r"^label_scale=([\d.]+)", layout, re.M)
     TEXT_PX = int(round(21 * float(m.group(1)))) if m else 21
+    for line in layout.splitlines():
+        if line.startswith("#@btn"):
+            a = parse_attrs(line)
+            BTN_SIZES[a["key"]] = (int(a["w"]), int(a["h"]))
     params = json.load(open(os.path.join(ROOT, "params.json")))
     tui_path = os.path.join(skin, "TUI.json")
     tui = json.load(open(tui_path))

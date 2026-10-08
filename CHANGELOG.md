@@ -26,6 +26,8 @@ Fixes from the first test on an Akai Force (MPC OS 3.9.1), and the features aske
   the release zip now explain the MIDI routing step by step.
 - **No more drop-downs covering the page**: Echo Beat, Clouds Mode, Quality and Roll Beat are always-visible button
   grids, and the 16 preset slots are a grid too. Only the 17-entry pad Sound picker is still a list (it closes on a pick).
+- **REMIX lower half is a big-button panel** for performance: Echo Beat, Release FX, Beats, RELEASE FX and a red
+  PANIC; Feedback moved up next to Echo, Noise to SETUP. CLOUDS shows its six modes as a row of big buttons.
 - **Bigger controls**: larger knobs (as large as MPC's filmstrip limit allows), big ON / OFF switches, taller buttons
   and option boxes.
 

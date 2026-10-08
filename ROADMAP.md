@@ -14,6 +14,11 @@ idea? Open an [issue](../../issues).
 - Presets (16 user slots, pads included).
 - MIDI routing explained in the README and in INSTALL.md.
 
+## Done in 1.2.1 (tested on the Force, 2026-10-08)
+- Big knobs slid instead of turning (filmstrip at MPC's 16384 px limit).
+- Q-Links in screen order on every page; switches flip with a Q-Link turn; lists can't skip (Beats).
+- Clouds no longer drops the dry level.
+
 ## Next
 - **Performance mode.** Change which parameters are shown (list to follow).
 - **Latency and CPU on the Force.** Plan: [docs/PERF_PLAN.md](docs/PERF_PLAN.md).

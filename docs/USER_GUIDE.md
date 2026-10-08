@@ -6,7 +6,7 @@ RMXXXL v.1 by ANDREALPHEUS is a performance remix effect in the spirit of the Pi
 
 Put it on a track, a submix or the master, and play the mix live with big macro moves: build-ups, breakdowns, filter sweeps, band kills, echoes, reverb washes, granular textures, drum and sample hits and a release button that snaps everything back.
 
-Status: version 1.2.1 (1.2.0 tested on an Akai Force, MPC OS 3.9.1 with MockbaMod; 1.2.1 fixes the big knobs drawing). It fixes what the 1.1.1 test found and passes the offline tests. The other Gen1 units are untested.
+Status: version 1.2.1, tested on an Akai Force (MPC OS 3.9.1 with MockbaMod). It fixes what the 1.1.1 test found and passes the offline tests. The other Gen1 units are untested.
 
 **Signal flow**, in order:
 

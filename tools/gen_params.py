@@ -22,9 +22,11 @@ def knob(key, name, lo=0.0, hi=1.0, default=0.0, unit=None, **kw):
 
 def opt(key, name, options, default=0, **kw):
     # qlink_ticks (1.2): MPC sends a Q-Link turn as many small nudges, and each used to step a whole option, so a
-    # short turn raced through a list (Force test of 1.1.1). Lists step once per 3 nudges, on/off switches per 2.
-    p = {"key": key, "name": name, "options": list(options), "default": default,
-         "qlink_ticks": 2 if len(options) == 2 else 3}
+    # short turn raced through a list (Force test of 1.1.1). Lists step once per 3 nudges, and the engine also holds
+    # each one-step move to one per 0.2 s. On/off switches take every nudge: the engine flips them once per turn.
+    p = {"key": key, "name": name, "options": list(options), "default": default}
+    if len(options) > 2 or key == "kill_mode":
+        p["qlink_ticks"] = 3
     p.update(kw)
     return p
 

@@ -60,6 +60,8 @@ const float kMaxKnob = 65535.0f / 65536.0f;   // Clouds' pots never reach 1.0 (s
 const float kSmoothing = 0.15f;               // per sub-block
 const int kReconfigureBlocks = 689;           // Clouds mode/quality change at most every 0.5 s
 const int kReverbTailBlocks = 12 * 44100 / kSub;   // keep a reverb running 12 s after its send closes
+const uint64_t kStepLockFrames = 8820;      // 0.2 s: the shortest gap between two one-step moves of an option list
+const uint64_t kGestureFrames = 15435;      // 0.35 s: sets of an on/off switch closer than this are one gesture
 const int kNumReverbs = 3;                    // Plate, Room, Hall; type 3 = Clouds' own reverb
 const int kRvClouds = 3;
 
@@ -143,6 +145,12 @@ struct Instance {
   bool roll_latched_was[rfx::PAD_COUNT];
   volatile int midi_release;
   volatile int midi_kill_toggle;
+
+  // ---- option lists: one step per kStepLockFrames from a Q-Link / wheel nudge (see SetParam)
+  uint64_t frames;                     // audio frames processed
+  uint64_t last_step[P_COUNT];         // when each option last moved one step
+  uint64_t last_touch[P_COUNT];        // switches: when the host last set them (a Q-Link turn is a burst of sets)
+  bool loading;                        // LoadState: preset or project values are set outright
 
   // ---- release (kill) and riser
   float kill_amt;                      // 0 = effects, 1 = dry
@@ -437,6 +445,17 @@ void Midi(void* inst, const uint8_t* msg, int len) {
 void SetParam(void* inst, const char* key, const char* val);
 int SaveState(const Instance* s, char* buf, int buf_len);
 
+// The ON / OFF switches (drawn as toggles: a tap sends the opposite value). Two-option lists drawn as buttons
+// (Hard / Smooth) send the option tapped, so they are not switches.
+bool IsSwitch(int p) {
+  switch (p) {
+    case P_RELEASE: case P_CL_ON: case P_CL_FREEZE: case P_CL_REVERSE:
+    case P_ROLL_1: case P_ROLL_2: case P_ROLL_3: case P_ROLL_4:
+      return true;
+  }
+  return false;
+}
+
 // Screen side of a preset save: snapshot the state now (the worker writes the file).
 void RequestSave(Instance* s) {
   char* text = static_cast<char*>(malloc(8192));
@@ -476,6 +495,7 @@ bool PresetSkips(const char* key) {
 // preset: a user preset (skips PresetSkips keys) rather than MPC restoring a project.
 void LoadState(Instance* s, const char* state, bool preset) {
   char item[64];
+  s->loading = true;
   while (*state) {
     size_t n = strcspn(state, ";");
     if (n < sizeof item) {
@@ -490,6 +510,7 @@ void LoadState(Instance* s, const char* state, bool preset) {
     state += n;
     if (*state == ';') ++state;
   }
+  s->loading = false;
   SelectPad(s, Option(s, P_PAD_SEL));   // the stored pad values (read last) win over the saved Edit controls
 }
 
@@ -524,6 +545,30 @@ void SetParam(void* inst, const char* key, const char* val) {
       return;
     }
     float old = s->param[p];
+    if (IsSwitch(p) && !s->loading) {
+      // On/off switches (1.2.1): a Q-Link turn either way flips the switch, once per turn. A turn arrives as a burst
+      // of sets (towards the other value, or the same value again at the end stop), so the first set of a burst
+      // flips and the rest of the burst (sets less than kGestureFrames apart) is ignored. A screen tap is a burst of
+      // one, so it flips as before. The flip is reported back to MPC through display_rev.
+      bool in_gesture = s->last_touch[p] != 0 && s->frames - s->last_touch[p] < kGestureFrames;
+      s->last_touch[p] = s->frames ? s->frames : 1;
+      if (in_gesture) { ++s->display_rev; return; }   // MPC shows its own guess: put ours back
+      int cur = Option(s, p);
+      int want = static_cast<int>(v + 0.5f);
+      s->param[p] = static_cast<float>(want != cur ? want : 1 - cur);
+      ++s->display_rev;
+      return;
+    }
+    if (kParamDefs[p].kind == K_OPTION && kParamDefs[p].nopts > 2 && !s->loading) {
+      // A Q-Link turn on the Force arrives as a fast stream of one-step nudges and raced through short lists (Beats
+      // skipped 1/2 -> 4). One step per kStepLockFrames of audio time, however fast the knob turns; a tap that jumps
+      // straight to another option (more than one step) is never held back.
+      int from = static_cast<int>(old + 0.5f), to = static_cast<int>(v + 0.5f);
+      if (to - from == 1 || from - to == 1) {
+        if (s->frames - s->last_step[p] < kStepLockFrames && s->last_step[p] != 0) return;
+        s->last_step[p] = s->frames;
+      }
+    }
     s->param[p] = v;
     if (p == P_PAD_SEL) {
       if (static_cast<int>(v + 0.5f) != static_cast<int>(old + 0.5f)) SelectPad(s, static_cast<int>(v + 0.5f));
@@ -878,8 +923,14 @@ void ProcessSub(Instance* s, const int16_t* in, int16_t* out, int n) {
     p->pitch = Clamp(s->smooth[P_CL_PITCH], -48.0f, 48.0f);
     p->density = Clamp(s->smooth[P_CL_DENSITY], 0.0f, kMaxKnob);
     p->texture = Clamp(s->smooth[P_CL_TEXTURE], 0.0f, kMaxKnob);
-    float blend = clouds_on ? s->smooth[P_CL_BLEND] + cs * 0.4f * (build + brk) : 0.0f;
-    p->dry_wet = Clamp(blend, 0.0f, kMaxKnob);
+    // Level (1.2.1): Clouds' own dry/wet keeps the dry at -3 dB (equal-power fade) and its output stage halves
+    // everything (SoftConvert), so switching it on dropped the dry by 9 dB. So Clouds now runs fully wet and RMXXXL
+    // mixes: the dry stays at unity up to Blend 50 %, then fades out; the wet comes in up to 50 %, then stays.
+    // Resonestor uses Blend as Distortion (Parasites), so it keeps its own mix; the Clouds reverb type (Clouds off)
+    // runs it dry-through with its reverb, both brought back to unity.
+    float blend = Clamp(s->smooth[P_CL_BLEND] + cs * 0.4f * (build + brk), 0.0f, 1.0f);
+    bool resonestor = s->applied_mode == PLAYBACK_MODE_RESONESTOR;
+    p->dry_wet = !clouds_on ? 0.0f : resonestor ? Clamp(blend, 0.0f, kMaxKnob) : kMaxKnob;
     p->stereo_spread = Clamp(s->smooth[P_CL_SPREAD], 0.0f, kMaxKnob);
     p->feedback = Clamp(s->smooth[P_CL_FEEDBACK] + (clouds_on ? cs * 0.6f * build : 0.0f), 0.0f, kMaxKnob);
     float verb = s->smooth[P_CL_REVERB];
@@ -897,12 +948,24 @@ void ProcessSub(Instance* s, const int16_t* in, int16_t* out, int n) {
     g.Process(s->cl_in, s->cl_out, n);
     if (!s->prepare_running) g.Prepare();
     float step = 1.0f / 441.0f;   // 10 ms crossfade in and out
+    // makeup: undo SoftConvert's 0.5 (and the -3 dB dry, or Clouds' wet gain of 1.2 x 0.707)
+    const float kDryMakeup = 2.8284f, kWetMakeup = 2.357f, kResonestorMakeup = 1.5f;
+    // per-mode wet trim, measured with noise so a fully wet Clouds sits near the dry level (granular is sparse,
+    // Oliverb and spectral are dense): granular, stretch, looping delay, spectral, Oliverb
+    static const float kWetTrim[5] = { 1.6f, 1.2f, 1.3f, 0.8f, 0.6f };
+    float trim = s->applied_mode >= 0 && s->applied_mode < 5 ? kWetTrim[s->applied_mode] : 1.0f;
+    float dry_g = blend < 0.5f ? 1.0f : 2.0f * (1.0f - blend);
+    float wet_g = blend < 0.5f ? 2.0f * blend : 1.0f;
     for (int i = 0; i < n; ++i) {
       s->clouds_mix += clouds_target > s->clouds_mix ? step : -step;
       s->clouds_mix = Clamp(s->clouds_mix, 0.0f, 1.0f);
       float cl = s->cl_out[i].l / 32768.0f, cr = s->cl_out[i].r / 32768.0f;
-      l[i] += (cl - l[i]) * s->clouds_mix;
-      r[i] += (cr - r[i]) * s->clouds_mix;
+      float ml, mr;
+      if (!clouds_on) { ml = cl * kDryMakeup; mr = cr * kDryMakeup; }
+      else if (resonestor) { ml = cl * kResonestorMakeup; mr = cr * kResonestorMakeup; }
+      else { ml = l[i] * dry_g + cl * kWetMakeup * trim * wet_g; mr = r[i] * dry_g + cr * kWetMakeup * trim * wet_g; }
+      l[i] += (ml - l[i]) * s->clouds_mix;
+      r[i] += (mr - r[i]) * s->clouds_mix;
     }
   }
   if (s->prepare_running) pthread_cond_signal(&s->prepare_wake);
@@ -996,6 +1059,7 @@ void Process(void* inst, const int16_t* in_lr, int16_t* out_lr, int frames) {
     int n = frames - off < kSub ? frames - off : kSub;
     ProcessSub(s, in_lr + 2 * off, out_lr + 2 * off, n);
   }
+  s->frames += frames;
 }
 
 const mpc_engine_t kEngine = { Create, Destroy, Midi, SetParam, GetParam, Render, Process };

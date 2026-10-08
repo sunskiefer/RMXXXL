@@ -97,7 +97,7 @@ After the **RELEASE FX** button, Build Up and Break Down are latched off, like t
 | Clouds | Switches the Clouds processor on or off (with a short crossfade) |
 | Mode | Granular, Stretch, Loop Delay (default), Spectral, Oliverb or Resonestor. A change takes effect within 0.5 s |
 | Position, Size, Pitch, Density, Texture | The module's main controls. Their names on the Q-Link display change per mode, as on the module |
-| Blend | Clouds dry/wet |
+| Blend | Clouds mix. Up to 50 % the dry stays at full level and Clouds is added on top; above 50 % the dry fades out. At 0 % Clouds on sounds exactly like Clouds off |
 | Spread, Feedback, Cloud Verb | Stereo spread, feedback and Clouds' own reverb |
 | Freeze, Reverse | Freeze the buffer; play grains reversed |
 | Quality | 16-bit or 8-bit, stereo or mono (lower quality = longer buffer, grittier sound) |
@@ -245,7 +245,7 @@ The ports are numbered in the order instances open during an MPC session. Remove
 
 ## Q-Links
 
-RMXXXL comes with its Q-Links already mapped, so there's nothing to assign. Each page carries up to 16 controls: knobs 1–8 are the Force's first knob bank and 9–16 the second.
+RMXXXL comes with its Q-Links already mapped, so there's nothing to assign. On every page the Q-Links follow the screen: **bank 1 is the top row, left to right, and bank 2 the bottom row, left to right**, so Force knob N sits under screen column N. A column with no turnable control (pad buttons, RELEASE FX, PANIC, SAVE, LOAD) leaves its knob empty.
 
 MPC reads two kinds of map from the plugin:
 
@@ -258,28 +258,29 @@ Which of the two you get depends on the Q-Link mode selected on the device. Choo
 
 | Bank | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | Build Up | Break Down | Filter | Echo | Low | Mid | High | Reverb |
-| 2 | Resonance | Feedback | Echo Beat | Release FX | Beats | Noise | Release | Hard / Smooth |
+| 1 (top) | Build Up | Break Down | Filter | Resonance | Echo | Feedback | Reverb | Release |
+| 2 (bottom) | Low | Mid | High | Echo Beat | Release FX | Beats | Hard / Smooth | — |
 
 **CLOUDS**
 
 | Bank | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | Position | Size | Pitch | Density | Texture | Blend | Feedback | Spread |
-| 2 | Cloud Verb | Scene Depth | Mode | Clouds on/off | Freeze | Reverse | Quality | — |
+| 1 (top) | Clouds on/off | Mode | Position | Size | Pitch | Density | Texture | Blend |
+| 2 (bottom) | Spread | Feedback | Cloud Verb | Freeze | Reverse | Quality | Scene Depth | — |
 
 **REVERB / PADS**
 
 | Bank | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | Reverb | Decay | Size | Tone | Predelay | Width | Scene Depth | Pad Level |
-| 2 | Type | Pad Tune | Roll Beat | MIDI Root | — | — | — | — |
+| 1 (top) | Type | Reverb | Decay | Size | Tone | Predelay | Width | Scene Depth |
+| 2 (bottom) | — | — | — | — | Pad Level | Pad Tune | Roll Beat | MIDI Root |
 
 **PADS**
 
 | Bank | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | Attack | Decay | Sustain | Release | Edit Pad | Sound | Roll Beat | Pad Level |
+| 1 (top) | Roll 1 | Roll 2 | Roll 3 | Roll 4 | — | — | — | — |
+| 2 (bottom) | Edit Pad | Sound | Attack | Decay | Sustain | Release | Roll Beat | — |
 
 The ADSR Q-Links follow the selected pad, the same as the knobs on screen.
 
@@ -287,10 +288,12 @@ The ADSR Q-Links follow the selected pad, the same as the knobs on screen.
 
 | Bank | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | Limit Drive | Ceiling | Release | In Gain | Low Xover | High Xover | Build HPF | Break LPF |
-| 2 | Riser Tune | Riser Duck | Noise | Preset | — | — | — | — |
+| 1 (top) | In Gain | Low Xover | High Xover | Build HPF | Break LPF | Limit Drive | Ceiling | Release |
+| 2 (bottom) | Preset | — | — | — | — | Riser Tune | Riser Duck | Noise |
 
-On knobs that pick from a list (Echo Beat, Release FX, Mode, Type and so on), it takes a short, deliberate turn to move one option (three small knob steps), so a turn doesn't race past the one you want. On/off switches (Clouds, Freeze, Reverse, Release) take two steps: turn right for on, left for off. The data wheel steps the same way.
+**On/off switches** (Release, Clouds, Freeze, Reverse, Roll 1–4): a small turn of the Q-Link **either way flips the switch**, once per turn. Let go for a moment before the next flip.
+
+**Lists** (Echo Beat, Release FX, Beats, Mode, Type, Quality, Roll Beat and so on) move **one option at a time, at most one every 0.2 s**, however fast you turn, so Beats goes 1/2 → 1 → 2 → 4 without skipping. Tapping the screen still jumps straight to any option.
 
 The pad hits, RELEASE FX, PANIC, SAVE and LOAD are deliberately not on Q-Links, because a knob turn would fire them over and over. Use the screen buttons or MIDI for those.
 

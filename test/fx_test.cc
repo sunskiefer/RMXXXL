@@ -338,11 +338,13 @@ int main() {
     double es = atof(buf);
     E->get_param(d, "filter", buf, sizeof buf);
     check(fabs(es - 0.6) < 1e-6 && fabs(atof(buf) + 0.6) < 1e-6, "Release moves no parameter", es);
+    run(d, sig, 130, 3000);   // taps on a switch closer than 0.35 s count as one gesture
     set(d, "release", 0);
     double back = run(d, sig, 40, 3000);
     check(fabs(back - wet) < 0.03, "Release Off: the effects come back as they were", back);
     // Smooth: over Release Beats (1 beat = 0.5 s at 120 BPM): halfway through it is between wet and dry
     set(d, "kill_mode", 1); set(d, "release_len", 1);
+    run(d, sig, 130, 3000);
     set(d, "release", 1);
     double half = run(d, sig, 86, 3000, 0.3, 10);   // ~0.25 s in
     double full = run(d, sig, 120, 3000, 0.3, 20);
@@ -422,6 +424,54 @@ int main() {
     E->get_param(d, "lim_ceiling", buf, sizeof buf);
     check(fabs(atof(buf) + 0.3) < 1e-6, "MIDI note root + 10 is Panic", atof(buf));
     set(d, "lim_ceiling", 0);
+  }
+
+
+  // ---------------------------------------------------------------- 1.2.1: Q-Link behaviour of switches and lists
+  {
+    run(d, sig, 200, -1);
+    E->get_param(d, "cl_freeze", buf, sizeof buf);
+    int f0 = atoi(buf);
+    // a Q-Link turn at the end stop: the same value again and again, a few ms apart -> one flip
+    for (int i = 0; i < 6; ++i) { set(d, "cl_freeze", f0); run(d, sig, 2, -1); }
+    E->get_param(d, "cl_freeze", buf, sizeof buf);
+    int f1 = atoi(buf);
+    run(d, sig, 200, -1);
+    // the next turn, the other way (towards the other value): one flip back
+    for (int i = 0; i < 6; ++i) { set(d, "cl_freeze", 1 - f1); run(d, sig, 2, -1); }
+    E->get_param(d, "cl_freeze", buf, sizeof buf);
+    int f2 = atoi(buf);
+    check(f1 == 1 - f0 && f2 == f0, "a Q-Link turn either way flips a switch once", f1);
+    // Hard / Smooth are buttons: tapping the one already lit keeps it
+    set(d, "kill_mode", 0); run(d, sig, 200, -1); set(d, "kill_mode", 0);
+    E->get_param(d, "kill_mode", buf, sizeof buf);
+    check(atoi(buf) == 0, "tapping the lit Hard button keeps Hard", atoi(buf));
+    // an option list: a fast burst of one-step nudges moves one step per 0.2 s, a tap jumps at once
+    set(d, "release_len", 0); run(d, sig, 200, -1);
+    for (int i = 1; i <= 3; ++i) {   // MPC nudges from the value it read back
+      E->get_param(d, "release_len", buf, sizeof buf);
+      set(d, "release_len", atoi(buf) + 1); run(d, sig, 3, -1);
+    }
+    E->get_param(d, "release_len", buf, sizeof buf);
+    int burst = atoi(buf);
+    run(d, sig, 200, -1);
+    set(d, "release_len", 3);
+    E->get_param(d, "release_len", buf, sizeof buf);
+    check(burst == 1 && atoi(buf) == 3, "a fast Q-Link turn moves Beats one step; a tap jumps", burst);
+    set(d, "release_len", 1);
+    run(d, sig, 200, -1);
+  }
+
+
+  // ---------------------------------------------------------------- 1.2.1: Clouds keeps the dry level
+  {
+    set(d, "cl_mode", 2); set(d, "cl_blend", 0); set(d, "cl_on", 1);
+    run(d, sig, 400, 1000);
+    double cl_dry = run(d, sig, 300, 1000);
+    check(fabs(20 * log10(cl_dry / dry1k)) < 0.5, "Clouds on at Blend 0 keeps the dry level (was -9 dB)", 20 * log10(cl_dry / dry1k));
+    run(d, sig, 130, 1000);
+    set(d, "cl_on", 0); set(d, "cl_blend", 0.5);
+    run(d, sig, 200, -1);
   }
 
   // ---------------------------------------------------------------- state
@@ -580,6 +630,7 @@ int main() {
       check(f != NULL && !strcmp(t, "PRESET 3: SAVED"), "Save writes Preset 03.txt and says so", 0);
       if (f) fclose(f);
       set(q, "echo_send", 0.0); set(q, "rv_type", 2); set(q, "pad_sel", 1); set(q, "env_a", 0.9); set(q, "pad_sound", 0);
+      run(q, qs, 130, -1);
       set(q, "release", 0);
       set(q, "preset_load", 1);
       settle(q);

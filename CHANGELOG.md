@@ -1,6 +1,14 @@
 # Changelog
 
 ## 1.2.1
+- **Q-Links follow the screen** on every page: bank 1 = the top row left to right, bank 2 = the bottom row left to
+  right, so Force knob N sits under screen column N.
+- **On/off switches flip with a small Q-Link turn either way** (Release, Clouds, Freeze, Reverse, Rolls), once per turn.
+- **Lists can't race any more**: a Q-Link moves Beats, Echo Beat, Mode and the other lists one option at a time, at
+  most one every 0.2 s (Beats used to skip from 1/2 to 4). Screen taps still jump straight to any option.
+- **Clouds no longer drops the volume**: switching it on cost 9 dB of dry signal (Clouds' own -3 dB dry crossfade and
+  its output stage halving everything). Clouds now runs fully wet and RMXXXL mixes: the dry stays at full level up to
+  Blend 50 %, the wet comes in on top; each mode's wet level is trimmed to sit near the dry.
 - Fix: the big knobs (Build Up, Break Down, Filter, Low / Mid / High, Reverb on its page, the ADSR, Limit Drive and
   Ceiling) slid up and down on the Force instead of turning. Their 1.2.0 filmstrip was 16384 px tall, MPC's limit;
   they are back to the 1.1.1 size, which draws right on the device.

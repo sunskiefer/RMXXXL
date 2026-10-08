@@ -72,8 +72,7 @@
         "Off",
         "On"
       ],
-      "default": 0,
-      "qlink_ticks": 2
+      "default": 0
     },
     {
       "key": "iso_low",
@@ -148,8 +147,7 @@
         "Off",
         "On"
       ],
-      "default": 0,
-      "qlink_ticks": 2
+      "default": 0
     },
     {
       "key": "cl_mode",
@@ -245,8 +243,7 @@
         "Off",
         "On"
       ],
-      "default": 0,
-      "qlink_ticks": 2
+      "default": 0
     },
     {
       "key": "cl_reverse",
@@ -255,8 +252,7 @@
         "Off",
         "On"
       ],
-      "default": 0,
-      "qlink_ticks": 2
+      "default": 0
     },
     {
       "key": "cl_quality",
@@ -572,8 +568,7 @@
         "Off",
         "On"
       ],
-      "default": 0,
-      "qlink_ticks": 2
+      "default": 0
     },
     {
       "key": "roll_2",
@@ -582,8 +577,7 @@
         "Off",
         "On"
       ],
-      "default": 0,
-      "qlink_ticks": 2
+      "default": 0
     },
     {
       "key": "roll_3",
@@ -592,8 +586,7 @@
         "Off",
         "On"
       ],
-      "default": 0,
-      "qlink_ticks": 2
+      "default": 0
     },
     {
       "key": "roll_4",
@@ -602,8 +595,7 @@
         "Off",
         "On"
       ],
-      "default": 0,
-      "qlink_ticks": 2
+      "default": 0
     },
     {
       "key": "kill_mode",
@@ -613,7 +605,7 @@
         "Smooth"
       ],
       "default": 0,
-      "qlink_ticks": 2
+      "qlink_ticks": 3
     },
     {
       "key": "release_go",

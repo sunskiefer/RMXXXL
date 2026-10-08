@@ -23,6 +23,9 @@ Changes planned after testing 1.1.1 on an Akai Force (MPC OS 3.9.1). Found a pro
 - **Noise riser.** Add **Tune** and **Modulation** knobs. Modulation is a simple LFO or a ducker driven by the
   incoming sound, whichever works best.
 
+## Performance
+- **Latency diagnosis and CPU tuning on the Force.** Plan: [docs/PERF_PLAN.md](docs/PERF_PLAN.md).
+
 ## New features
 - **Panic button.** Resets the plugin to factory defaults, as freshly installed, whatever was saved in the project.
   It also stops all sound and clears every tail.

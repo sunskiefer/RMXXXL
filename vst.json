@@ -1,8 +1,8 @@
 {
   "name": "RMXXXL",
-  "vendor": "ANDREALPHEUS",
+  "vendor": "L'Cronx",
   "uid": "AnRx",
-  "version": 1201,
+  "version": 1202,
   "so": "rmxxxl.so",
   "params": "params.json",
   "effect": true,

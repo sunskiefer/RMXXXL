@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.2
+- Packed under **L'Cronx**: the plugin folder is now `L'Cronx - VST - RMXXXL` and MPC lists the maker as L'Cronx. Nothing else
+  changed from 1.2.1. If you installed 1.2.1, run its `uninstall.sh` first (copy out anything you saved inside the plugin
+  folder), then install 1.2.2. The installer handles the ' in the folder name.
+
 ## 1.2.1
 - **Q-Links follow the screen** on every page: bank 1 = the top row left to right, bank 2 = the bottom row left to
   right, so Force knob N sits under screen column N.

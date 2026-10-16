@@ -1,4 +1,4 @@
-// RMXXXL v.1 (ANDREALPHEUS): an RMX-1000-style performance effect for MPC OS (MPC Live/One/X/Key, Force), as one native insert effect.
+// RMXXXL v.1 (L'Cronx): an RMX-1000-style performance effect for MPC OS (MPC Live/One/X/Key, Force), as one native insert effect.
 //
 // Signal flow, per 32-frame sub-block of each 128-frame MPC block:
 //

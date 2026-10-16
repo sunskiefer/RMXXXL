@@ -2,7 +2,7 @@
 
 ## What RMXXXL is
 
-RMXXXL v.1 by ANDREALPHEUS is a performance remix effect in the spirit of the Pioneer RMX-1000. It runs as **one native insert effect** inside MPC OS on first-generation standalone hardware: Akai Force, MPC Live / Live II, One, X and Key 61.
+RMXXXL v.1 by L'Cronx is a performance remix effect in the spirit of the Pioneer RMX-1000. It runs as **one native insert effect** inside MPC OS on first-generation standalone hardware: Akai Force, MPC Live / Live II, One, X and Key 61.
 
 Put it on a track, a submix or the master, and play the mix live with big macro moves: build-ups, breakdowns, filter sweeps, band kills, echoes, reverb washes, granular textures, drum and sample hits and a release button that snaps everything back.
 
@@ -44,8 +44,8 @@ Installing plugins this way is unofficial. Back up your projects first.
 2. Unzip `RMXXXL-<version>-mpc-armv7.zip` on your computer. You get a folder `RMXXXL-<version>`.
 3. Copy the folder to the device: `scp -r RMXXXL-<version> root@<device-ip>:/tmp/`
 4. Run the installer: `ssh -t root@<device-ip> sh /tmp/RMXXXL-<version>/install.sh`
-5. Confirm when it asks. It stops MPC, copies the plugin folder `ANDREALPHEUS - VST - RMXXXL` into `/sdcard/Synths`, backs up `MPC.settings`, adds the plugin to MPC's plugin list and starts MPC again.
-6. On the device, open a track's insert effects and load **RMXXXL** (manufacturer **ANDREALPHEUS**).
+5. Confirm when it asks. It stops MPC, copies the plugin folder `L'Cronx - VST - RMXXXL` into `/sdcard/Synths`, backs up `MPC.settings`, adds the plugin to MPC's plugin list and starts MPC again.
+6. On the device, open a track's insert effects and load **RMXXXL** (manufacturer **L'Cronx**).
 
 Installer options: `-y` skips the confirmation prompt, and `-t <folder>` installs into another Synths folder, for example on a card.
 

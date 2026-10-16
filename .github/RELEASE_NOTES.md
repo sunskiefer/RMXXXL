@@ -1,3 +1,5 @@
+> **1.2.2** is 1.2.1 packed under L'Cronx (plugin folder `L'Cronx - VST - RMXXXL`); nothing else changed. Uninstall 1.2.1 first.
+
 **RMXXXL v.1 — an RMX-1000-style remix effect that runs natively inside MPC OS on the Akai Force.**
 
 Put it on a track, a submix or the master and play the mix live: build-ups, breakdowns, filter sweeps, band kills, echoes, reverb washes, granular textures, drum and sample pads, a Release kill switch that drops everything back to dry, and a Panic button. Everything sits in one insert slot, with its own touchscreen pages and Q-Link sets.
@@ -29,7 +31,7 @@ Download **RMXXXL-1.2.1-mpc-armv7.zip** below, unzip it, then:
     scp -r RMXXXL-1.2.1 root@<device-ip>:/tmp/
     ssh -t root@<device-ip> sh /tmp/RMXXXL-1.2.1/install.sh
 
-The installer stops MPC (save first), installs the plugin, and starts MPC again. Then insert **RMXXXL** (manufacturer ANDREALPHEUS) as an insert effect. Pad samples go in `/sdcard/RMXXXL Samples`, presets in `/sdcard/RMXXXL Presets`.
+The installer stops MPC (save first), installs the plugin, and starts MPC again. Then insert **RMXXXL** (manufacturer L'Cronx) as an insert effect. Pad samples go in `/sdcard/RMXXXL Samples`, presets in `/sdcard/RMXXXL Presets`.
 
 ## Play it from a MIDI track
 RMXXXL opens its own MIDI port, **RMXXXL 1**. Create a MIDI track, set its MIDI output port to **RMXXXL 1**, and play: from MIDI Root (default 36 = C1) +0..+3 are Pads 1-4, +4..+7 the same pads as rolls while held, +8 Release FX, +9 Release on/off, +10 Panic. Step by step in the README and in INSTALL.md inside the zip.

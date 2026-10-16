@@ -36,12 +36,13 @@ jobs:
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           case "$GITHUB_REF" in refs/tags/v*) ;; *) VERSION="0.0.0-dev" ;; esac
+          python3 tools/release_quotes.py third_party/mpc-vst-plugins
           python3 third_party/mpc-vst-plugins/tools/release.py \
             --so build/arm/rmxxxl.so \
-            --skin "build/skin/ANDREALPHEUS - VST - RMXXXL" \
+            --skin "build/skin/L'Cronx - VST - RMXXXL" \
             --entry build/pluginlist-entry.xml \
             --version "$VERSION" \
-            --about "RMXXXL v.1 by ANDREALPHEUS: RMX-style remix FX for MPC OS" \
+            --about "RMXXXL v.1 by L'Cronx: RMX-style remix FX for MPC OS" \
             --repo sunskiefer/RMXXXL --license GPL-3.0-or-later \
             -o dist
 

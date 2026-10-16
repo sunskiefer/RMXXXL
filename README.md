@@ -3,7 +3,7 @@
 **An RMX-1000-style remix effect that runs natively inside MPC OS on the Akai Force.**
 
 RMXXXL is a VST2 insert effect for MPC OS's built-in plugin host, made by L'Cronx (shown on the device as
-**ANDREALPHEUS**). Put it on a track, a submix or the master and play the mix live: build-ups, breakdowns,
+**L'Cronx**). Put it on a track, a submix or the master and play the mix live: build-ups, breakdowns,
 filter sweeps, band kills, echoes, reverb washes, granular textures, drum and sample pads, a Release kill switch that
 drops everything back to dry, and a Panic button. Everything sits in one insert slot, with its own touchscreen pages and Q-Link sets.
 
@@ -104,8 +104,8 @@ ssh -t root@<device-ip> sh /tmp/RMXXXL-<version>/install.sh
 ```
 
 The installer asks for confirmation (`-y` skips it), **stops MPC** (save your project first), copies the plugin
-to `/sdcard/Synths/ANDREALPHEUS - VST - RMXXXL/`, backs up and edits `MPC.settings`, and starts MPC again.
-Running it again upgrades in place. Then insert **RMXXXL** (manufacturer ANDREALPHEUS) on a track, submix or the
+to `/sdcard/Synths/L'Cronx - VST - RMXXXL/`, backs up and edits `MPC.settings`, and starts MPC again.
+Running it again upgrades in place. Then insert **RMXXXL** (manufacturer L'Cronx) on a track, submix or the
 master. `uninstall.sh` removes it the same way.
 
 Pad samples go in `/sdcard/RMXXXL Samples` (created on first load) and presets in `/sdcard/RMXXXL Presets`, both

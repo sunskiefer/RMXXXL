@@ -72,6 +72,11 @@ of whatever track or master it is inserted on.
 | 44 (G#1) | +8 | Release FX (Echo Out / Brake / Backspin) |
 | 45 (A1) | +9 | Release on / off (each note switches it) |
 | 46 (A#1) | +10 | Panic |
+| 47 (B1) | +11 | Kill Low |
+| 48 (C2) | +12 | Kill Mid |
+| 49 (C#2) | +13 | Kill High |
+
+Each note switches the control on or off.
 
 **If nothing happens:** the port only exists while RMXXXL is inserted; after removing and re-inserting it the number
 can change (re-select it on the MIDI track); and the notes must land between MIDI Root and MIDI Root + 10. The

@@ -25,6 +25,7 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 FONT = os.path.join(ROOT, "art", "fonts", "TitilliumWeb-SemiBold.ttf")
 SHADOW_Y = 86            # layout.conf y -> skin y
 TEXT_PX = 21             # MPC's live text: 21 px x label_scale (scale_names=1); set from layout.conf in main()
+LABEL_SCALE = 1.0        # label_scale from layout.conf (1.7 = the Meta4MPCXXL 0.1.2 text sizes), set in main()
 BTN_H = 60               # 1.2: bigger buttons (Force test: too small to hit)
 BTN_W = 150
 TOGGLE_W, TOGGLE_H = 150, 56   # toggles: a lit pill with ON / OFF, the name under it
@@ -144,48 +145,155 @@ def fix_segments(skin, layout, params):
     return n
 
 
+TOG_SIZES = {}   # toggle name -> (w, h), from "#@tog label=<name> w= h=" lines in layout.conf (default TOGGLE_W x TOGGLE_H)
+KNOB_NAME_PX, KNOB_VALUE_PX = 35.7, 37.4   # the Meta4MPCXXL 0.1.2 knob text sizes (standing rule)
+VALUE_BOX = (82, 40)                       # the value box only holds a number: small, centred under the knob name
+
+
 def fix_toggles(skin, tui):
-    """Toggles: the drawn switch is a small pill (53 x 29). Make it a TOGGLE_W x TOGGLE_H pill reading ON / OFF, lit when
-    on, with the name under it; the placements stay centred where the layout put them."""
+    """Toggles: the drawn switch is a small pill (53 x 29). Make it a TOGGLE_W x TOGGLE_H box reading ON / OFF, lit when
+    on, with the name under it (none for ns=0); a toggle named in a "#@tog" line gets its own size. The switch stays
+    centred where the layout put it."""
+    import copy
     loc = tui["pageData"]["componentDefinitions"]["localComponentDefinitions"]
-    keys = [d["key"] for d in loc if d["key"].startswith("shToggle")]
-    if not keys:
+    defs = {d["key"]: d for d in loc if d["key"].startswith("shToggle")}
+    if not defs:
         return 0
-    bw = 0
-    for d in loc:
-        if d["key"] not in keys:
-            continue
+    name_h = int(round(28 * LABEL_SCALE))
+    made, images = {}, set()
+
+    def clone(dkey, size):
+        key = "%s@%dx%d" % (dkey, size[0], size[1])
+        if key in made:
+            return key
+        tw, th = size
+        d = copy.deepcopy(defs[dkey])
+        d["key"] = key
         comps = d["value"]["componentsData"]
-        bw = max(bw, int(comps[0]["bounds"]["bounds"].split()[2]))
-    W, H = max(bw, TOGGLE_W + 20), TOGGLE_H + 8 + 34
-    images = set()
+        named = any(c["componentData"]["type"] == "Label" for c in comps)
+        W = max(int(comps[0]["bounds"]["bounds"].split()[2]), tw + 20) if named else tw
+        H = th + 8 + name_h + 2 if named else th
+        for c in comps:
+            t_ = c["componentData"]["type"]
+            if t_ == "Focus":
+                c["bounds"]["bounds"] = "0 0 %d %d" % (W, H)
+            elif t_ == "Button":
+                dat = c["componentData"]["data"]
+                dat["onImage"], dat["offImage"] = "sh_tog_%dx%d_on.png" % size, "sh_tog_%dx%d_off.png" % size
+                c["bounds"]["bounds"] = "%d %d %d %d" % ((W - tw) // 2, 4 if named else 0, tw, th)
+            elif t_ == "Label":
+                c["bounds"]["bounds"] = "0 %d %d %d" % (th + 8, W, name_h)
+        loc.append(d)
+        made[key] = (W, H, named)
+        images.add(size)
+        return key
+
+    def walk(comps):
+        for c in comps:
+            cd = c.get("componentData", {})
+            if cd.get("type") in defs:
+                size = TOG_SIZES.get(cd.get("name"), (TOGGLE_W, TOGGLE_H))
+                nkey = clone(cd["type"], size)
+                W, H, named = made[nkey]
+                x, y, pw, ph = (int(v) for v in c["bounds"]["bounds"].split())
+                cx, cy = x + pw // 2, y + 18          # the layout's cy is the switch centre (placed at cy - 18)
+                top = cy - (4 + size[1] // 2) if named else cy - size[1] // 2
+                c["bounds"]["bounds"] = "%d %d %d %d" % (cx - W // 2, top, W, H)
+                cd["type"] = nkey
+            if "componentsData" in c.get("value", {}):
+                walk(c["value"]["componentsData"])
+    for d in list(loc):
+        if d["key"] in defs:
+            continue
+        walk(d["value"].get("componentsData", []))
+    walk(tui["pageData"].get("componentsData", []) if isinstance(tui["pageData"], dict) else [])
+    loc[:] = [d for d in loc if d["key"] not in defs]
+    for tw, th in images:
+        for on in (True, False):
+            im = Image.new("RGB", (tw, th), (0, 0, 0))
+            dr = ImageDraw.Draw(im)
+            dr.rounded_rectangle((1, 1, tw - 2, th - 2), radius=10,
+                                 fill="#" + (ACCENT if on else "161616"), outline="#" + (ACCENT_HI if on else "3a3a3a"), width=2)
+            text_center(dr, tw / 2, th / 2, "ON" if on else "OFF", TEXT_PX, "111111" if on else INK_DIM)
+            im.save(os.path.join(skin, "sh_tog_%dx%d_%s.png" % (tw, th, "on" if on else "off")))
+    return len(made)
+
+
+TWO_LINE_NAMES = {"SCENE DEPTH"}   # knob names drawn on two lines (SCENE / DEPTH): a narrower, taller name box
+TWO_LINE_W, TWO_LINE_H, TWO_LINE_VALUE_DY = 150, 70, 126   # name box; value box top below the knob centre
+
+
+def two_line_knobs(tui):
+    """Knobs named in TWO_LINE_NAMES: the name label is narrower than the text and two lines tall, and the value box sits
+    below it, so MPC wraps the name onto two lines (as in the layout pictures)."""
+    import copy
+    loc = tui["pageData"]["componentDefinitions"]["localComponentDefinitions"]
+    defs = {d["key"]: d for d in loc if d["key"].startswith("shKnob")}
+    made = {}
+
+    def clone(dkey):
+        key = dkey + "@2L"
+        if key in made:
+            return made[key]
+        d = copy.deepcopy(defs[dkey])
+        d["key"] = key
+        comps = d["value"]["componentsData"]
+        fx, fy, W, H = (int(v) for v in comps[0]["bounds"]["bounds"].split())
+        s = int(comps[1]["bounds"]["bounds"].split()[3])
+        value_y = TWO_LINE_VALUE_DY + s // 2
+        for c in comps:
+            cd = c["componentData"]
+            if cd.get("type") != "Label":
+                continue
+            x, y, w, h = (int(v) for v in c["bounds"]["bounds"].split())
+            if cd["name"] == "Name":
+                c["bounds"]["bounds"] = "%d %d %d %d" % ((W - TWO_LINE_W) // 2, y, TWO_LINE_W, TWO_LINE_H)
+            else:
+                c["bounds"]["bounds"] = "%d %d %d %d" % (x, value_y, w, h)
+        newH = value_y + VALUE_BOX[1] + 6
+        comps[0]["bounds"]["bounds"] = "%d %d %d %d" % (fx, fy, W, newH)
+        loc.append(d)
+        made[key] = (d, newH)
+        return made[key]
+
+    def walk(comps):
+        for c in comps:
+            cd = c.get("componentData", {})
+            if cd.get("type") in defs and cd.get("name") in TWO_LINE_NAMES:
+                _, newH = clone(cd["type"])
+                x, y, pw, ph = (int(v) for v in c["bounds"]["bounds"].split())
+                c["bounds"]["bounds"] = "%d %d %d %d" % (x, y, pw, newH)
+                cd["type"] = cd["type"] + "@2L"
+            if "componentsData" in c.get("value", {}):
+                walk(c["value"]["componentsData"])
+    for d in list(loc):
+        if d["key"] in defs or d["key"].endswith("@2L"):
+            continue
+        walk(d["value"].get("componentsData", []))
+
+
+def fix_knob_text(tui):
+    """Knob names and values at the standing-rule sizes (35.7 / 37.4 px); the value box only shows a number, so it is
+    VALUE_BOX wide and centred under the name instead of as wide as the touch box."""
+    loc = tui["pageData"]["componentDefinitions"]["localComponentDefinitions"]
+    n = 0
     for d in loc:
-        if d["key"] not in keys:
+        if not d["key"].startswith("shKnob"):
             continue
         for c in d["value"]["componentsData"]:
-            t = c["componentData"]["type"]
-            if t == "Focus":
-                c["bounds"]["bounds"] = "0 0 %d %d" % (W, H)
-            elif t == "Button":
-                c["bounds"]["bounds"] = "%d 4 %d %d" % ((W - TOGGLE_W) // 2, TOGGLE_W, TOGGLE_H)
-                images.add((c["componentData"]["data"]["onImage"], c["componentData"]["data"]["offImage"]))
-            elif t == "Label":
-                c["bounds"]["bounds"] = "0 %d %d 32" % (TOGGLE_H + 8, W)
-    for d in loc:   # placements
-        for c in d["value"].get("componentsData", []):
-            if c["componentData"].get("type") in keys:
-                x, y, pw, ph = (int(v) for v in c["bounds"]["bounds"].split())
-                cx, cy = x + pw // 2, y + ph // 2
-                c["bounds"]["bounds"] = "%d %d %d %d" % (cx - W // 2, cy - H // 2, W, H)
-    for on_img, off_img in images:
-        for img, on in ((on_img, True), (off_img, False)):
-            im = Image.new("RGB", (TOGGLE_W, TOGGLE_H), (0, 0, 0))
-            dr = ImageDraw.Draw(im)
-            dr.rounded_rectangle((1, 1, TOGGLE_W - 2, TOGGLE_H - 2), radius=10,
-                                 fill="#" + (ACCENT if on else "161616"), outline="#" + (ACCENT_HI if on else "3a3a3a"), width=2)
-            text_center(dr, TOGGLE_W / 2, TOGGLE_H / 2, "ON" if on else "OFF", TEXT_PX, "111111" if on else INK_DIM)
-            im.save(os.path.join(skin, img))
-    return len(keys)
+            cd = c["componentData"]
+            if cd.get("type") != "Label":
+                continue
+            font = cd["data"]["textStyle"]["font"]
+            x, y, w, h = (int(v) for v in c["bounds"]["bounds"].split())
+            if cd["name"] == "Name":
+                font["height"] = KNOB_NAME_PX
+            elif cd["name"] == "Value":
+                font["height"] = KNOB_VALUE_PX
+                vw, vh = VALUE_BOX
+                c["bounds"]["bounds"] = "%d %d %d %d" % (x + (w - vw) // 2, y + (h - vh) // 2, vw, vh)
+        n += 1
+    return n
 
 
 def fix_popup_options(skin, tui, layout, params):
@@ -250,18 +358,24 @@ def bake_labels(skin, layout):
 def main():
     skin, layout_path = sys.argv[1], sys.argv[2]
     layout = open(layout_path).read()
-    global TEXT_PX
+    global TEXT_PX, LABEL_SCALE
     m = re.search(r"^label_scale=([\d.]+)", layout, re.M)
-    TEXT_PX = int(round(21 * float(m.group(1)))) if m else 21
+    LABEL_SCALE = float(m.group(1)) if m else 1.0
+    TEXT_PX = int(round(21 * LABEL_SCALE))
     for line in layout.splitlines():
         if line.startswith("#@btn"):
             a = parse_attrs(line)
             BTN_SIZES[a["key"]] = (int(a["w"]), int(a["h"]))
+        if line.startswith("#@tog"):
+            a = parse_attrs(line)
+            TOG_SIZES[a["label"]] = (int(a["w"]), int(a["h"]))
     params = json.load(open(os.path.join(ROOT, "params.json")))
     tui_path = os.path.join(skin, "TUI.json")
     tui = json.load(open(tui_path))
     nb = fix_buttons(skin, tui)
     nt = fix_toggles(skin, tui)
+    fix_knob_text(tui)
+    two_line_knobs(tui)
     npop = fix_popup_options(skin, tui, layout, params)
     with open(tui_path, "w") as f:
         json.dump(tui, f, indent=2)

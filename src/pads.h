@@ -93,6 +93,15 @@ struct Pads {
     for (int i = 0; i < PAD_COUNT; ++i) { v[i].stage = ENV_OFF; v[i].sample = NULL; v[i].env = 0.0f; }
   }
 
+  // Panic: every playing voice fades out over about 5 ms, so stopping it afterwards cannot click.
+  void FastReleaseAll() {
+    for (int i = 0; i < PAD_COUNT; ++i) {
+      if (v[i].stage == ENV_OFF) continue;
+      v[i].stage = ENV_RELEASE;
+      v[i].release_step = fmaxf(v[i].env, 1e-4f) / 220.5f;
+    }
+  }
+
   static void StartRelease(PadVoice& p) {
     p.stage = ENV_RELEASE;
     float r = fmaxf(p.adsr.r_ms, 1.0f) * 0.001f * kSampleRate;

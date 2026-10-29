@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.3.0
+Asked for in a GitHub issue (benja0496-cmd), plus the bigger knobs and text.
+- **EQ Kills:** Kill Low, Kill Mid and Kill High buttons under the Low / Mid / High knobs on REMIX cut a band to zero
+  at once (tap on, tap again off). MIDI notes MIDI Root +11 / +12 / +13. They are ordinary parameters, so they map to
+  automation.
+- **Panic is clean:** it no longer resets with the signal running (that made the artifacts). The effects crossfade out
+  to the dry signal in 5 ms, everything goes back to its default behind it (tails cleared, pads faded and stopped), and
+  the effects fade back in over 5 ms. The sound keeps passing the whole time. The limiter keeps running through it.
+- **Bigger knobs and text:** the knobs are the largest the Force draws right (radius 58 black, 57 grey) and the knob
+  names and values use the Meta4MPCXXL 0.1.2 sizes (35.7 / 37.4 px) with small value boxes. Names that don't fit are
+  shortened (BUILD, BREAK, RES, FDBACK, VERB, CL VERB, PAD LVL, PAD TUN, LO XOV, HI XOV, BLD HPF, BRK LPF, LIM DRV,
+  RISE T, RISE D); SCENE DEPTH is on two lines. The page layout follows the supplied pictures.
+- **Also in the engine, not on screen yet:** Switch Mode (Toggle / Momentary: Release and the Kills follow the
+  controller button while it is held) and Panic Recall (Factory, Last Used or a preset slot). Both default to the old
+  behaviour. The plugin cannot see the MPC's Shift key, so a Shift-held momentary mode is not built.
+- Parameters are appended (80 now) and four are renamed to the shortened names; saved projects keep their values.
+  Not tested on a device yet.
+
 ## 1.2.3
 - Built on the latest wrapper and includes the Q-Link and automation fix (mpc-vst-plugins #486-#489): Q-Links now
   move this plugin's parameters on the track's automation screen (MPC no longer rebuilds its parameter screen on every

@@ -73,3 +73,8 @@ preset_slot
 preset_save
 preset_load
 preset_info
+kill_low
+kill_mid
+kill_high
+switch_mode
+panic_recall

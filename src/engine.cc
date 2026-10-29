@@ -12,11 +12,15 @@
 // macros off until both knobs are turned back to zero (as the RMX's release snaps the scene back to dry).
 // Release (1.2) is a kill switch: On crossfades the effect chain to the dry input (Hard: 5 ms, Smooth: over Release
 // Beats) and Off brings it back the same way. No parameter moves, and the effects keep running underneath.
-// Panic puts every effect parameter back to its default, clears the tails and stops the pads; the pad setup stays.
+// Panic crossfades the output to the dry input (the sound keeps passing), puts every effect parameter back to its default,
+// clears the tails and stops the pads behind it, recalls a preset if Panic Recall asks for one, and crossfades back; the
+// pad setup stays.
+// Kill Low / Mid / High (1.3) take an isolator band to zero. Switch Mode Momentary makes Release and the Kills follow
+// the controller button (on while held).
 //
 // MPC OS sends no MIDI to insert effects, so each instance opens its own ALSA MIDI input, "RMXXXL N"
 // (src/midi_in.cc, from FullPace/overcast). Notes, chromatic from MIDI Root: +0..3 Kick/Snare/Clap/Hat,
-// +4..7 the same as rolls while held, +8 Release FX, +9 Release on/off, +10 Panic.
+// +4..7 the same as rolls while held, +8 Release FX, +9 Release on/off, +10 Panic, +11/+12/+13 Kill Low/Mid/High.
 //
 // Presets (1.2): 16 slots, files "<slot>.txt" holding the state string, in "RMXXXL Presets" beside the sample folder
 // (/sdcard/RMXXXL Presets on the device). Save snapshots the state on the caller's thread and the worker writes it;
@@ -62,6 +66,7 @@ const int kReconfigureBlocks = 689;           // Clouds mode/quality change at m
 const int kReverbTailBlocks = 12 * 44100 / kSub;   // keep a reverb running 12 s after its send closes
 const uint64_t kStepLockFrames = 8820;      // 0.2 s: the shortest gap between two one-step moves of an option list
 const uint64_t kGestureFrames = 15435;      // 0.35 s: sets of an on/off switch closer than this are one gesture
+const int kPanicLoadWait = 1000;              // sub-blocks (~0.7 s) Panic waits for a preset before settling for Factory
 const int kNumReverbs = 3;                    // Plate, Room, Hall; type 3 = Clouds' own reverb
 const int kRvClouds = 3;
 
@@ -144,7 +149,7 @@ struct Instance {
   float roll_count[rfx::PAD_COUNT];
   bool roll_latched_was[rfx::PAD_COUNT];
   volatile int midi_release;
-  volatile int midi_kill_toggle;
+  volatile int midi_sw[4];             // MIDI to Release, Kill Low / Mid / High: 0 none, 1 toggle, 2 on, 3 off
 
   // ---- option lists: one step per kStepLockFrames from a Q-Link / wheel nudge (see SetParam)
   uint64_t frames;                     // audio frames processed
@@ -168,6 +173,13 @@ struct Instance {
   volatile unsigned slot_used;         // bit per slot: a file exists
   volatile int preset_status;          // 0 idle, 1 saved, 2 loaded, 3 save failed, 4 empty slot, 5 load failed
   volatile int status_slot;
+  volatile int last_slot;              // the slot last saved or loaded (-1: none yet), for Panic Recall "Last Used"
+
+  // ---- Panic (1.3): crossfade to the dry input, reset (and recall a preset) behind it, crossfade back. Zero = idle.
+  int panic_phase;                     // 0 idle, 1 going to dry, 2 dry (waiting for a preset), 3 coming back
+  int panic_slot;                      // the preset slot being recalled
+  int panic_wait;                      // sub-blocks left to wait for it
+  bool panic_requested;                // the worker has been asked for it
 
   float bpm;
 
@@ -293,6 +305,7 @@ void* Create(const char* data_dir) {
   if (!s) return NULL;
   pthread_mutex_init(&s->preset_mutex, NULL);
   s->load_slot = -1;
+  s->last_slot = -1;
   snprintf(s->sample_dir, sizeof s->sample_dir, "%s", data_dir ? data_dir : "/sdcard/RMXXXL Samples");
   {   // presets live beside the sample folder: "<parent>/RMXXXL Presets"
     const char* slash = strrchr(s->sample_dir, '/');
@@ -434,8 +447,11 @@ void Midi(void* inst, const uint8_t* msg, int len) {
     }
   } else if (rel == 8 && on) {
     s->midi_release = 1;
-  } else if (rel == 9 && on) {
-    s->midi_kill_toggle = 1;
+  } else if (rel == 9 || (rel >= 11 && rel <= 13)) {
+    // +9 Release, +11..13 Kill Low / Mid / High. Toggle mode: each note-on flips it. Momentary mode: on while the note is held.
+    int i = rel == 9 ? 0 : rel - 10;
+    if (Option(s, P_SWITCH_MODE)) s->midi_sw[i] = on ? 2 : 3;
+    else if (on) s->midi_sw[i] = 1;
   } else if (rel == 10 && on) {
     s->trig_pending[P_PANIC] = 1;
   }
@@ -451,9 +467,16 @@ bool IsSwitch(int p) {
   switch (p) {
     case P_RELEASE: case P_CL_ON: case P_CL_FREEZE: case P_CL_REVERSE:
     case P_ROLL_1: case P_ROLL_2: case P_ROLL_3: case P_ROLL_4:
+    case P_KILL_LOW: case P_KILL_MID: case P_KILL_HIGH:
       return true;
   }
   return false;
+}
+
+// The switches Switch Mode "Momentary" applies to: they take the value the controller sends (on while its button is
+// held) instead of flipping once per press.
+bool IsMomentaryTarget(int p) {
+  return p == P_RELEASE || p == P_KILL_LOW || p == P_KILL_MID || p == P_KILL_HIGH;
 }
 
 // Screen side of a preset save: snapshot the state now (the worker writes the file).
@@ -465,12 +488,14 @@ void RequestSave(Instance* s) {
   free(s->save_text);   // an unwritten older save of the same press burst is replaced
   s->save_text = text;
   s->save_slot = Clamp(Option(s, P_PRESET_SLOT), 0, kPresetSlots - 1);
+  s->last_slot = s->save_slot;
   pthread_mutex_unlock(&s->preset_mutex);
 }
 
 void RequestLoad(Instance* s) {
   pthread_mutex_lock(&s->preset_mutex);
   s->load_slot = Clamp(Option(s, P_PRESET_SLOT), 0, kPresetSlots - 1);
+  s->last_slot = s->load_slot;
   pthread_mutex_unlock(&s->preset_mutex);
 }
 
@@ -487,9 +512,12 @@ int SaveState(const Instance* s, char* buf, int buf_len) {
   return len < buf_len ? len : buf_len - 1;
 }
 
-// Not part of a preset: the kill switch (a performance state), the slot itself and the status readout.
+// Not part of a preset: the kill switches (performance states), how the switches and Panic behave (controller setup),
+// the slot itself and the status readout.
 bool PresetSkips(const char* key) {
-  return !strcmp(key, "release") || !strcmp(key, "preset_slot") || !strcmp(key, "preset_info");
+  return !strcmp(key, "release") || !strcmp(key, "preset_slot") || !strcmp(key, "preset_info") ||
+         !strcmp(key, "kill_low") || !strcmp(key, "kill_mid") || !strcmp(key, "kill_high") ||
+         !strcmp(key, "switch_mode") || !strcmp(key, "panic_recall");
 }
 
 // preset: a user preset (skips PresetSkips keys) rather than MPC restoring a project.
@@ -545,6 +573,13 @@ void SetParam(void* inst, const char* key, const char* val) {
       return;
     }
     float old = s->param[p];
+    if (IsMomentaryTarget(p) && !s->loading && Option(s, P_SWITCH_MODE)) {
+      // Switch Mode "Momentary" (1.3): Release and the Kills take the value that is sent, so a controller button
+      // (127 pressed, 0 released) holds them on while it is down, and one press is one action. A screen tap sends the
+      // opposite of what it reads back, so it still switches.
+      s->param[p] = v > 0.5f ? 1.0f : 0.0f;
+      return;
+    }
     if (IsSwitch(p) && !s->loading) {
       // On/off switches (1.2.1): a Q-Link turn either way flips the switch, once per turn. A turn arrives as a burst
       // of sets (towards the other value, or the same value again at the end stop), so the first set of a burst
@@ -784,34 +819,35 @@ void Render(void* inst, int16_t* out_lr, int frames) {
   memset(out_lr, 0, sizeof(int16_t) * 2 * frames);   // an effect: the wrapper calls Process()
 }
 
-// Panic keeps these: the pad setup (sounds, envelopes, level, tune, roll beat, MIDI root) and the preset slot.
+// Panic keeps these: the pad setup (sounds, envelopes, level, tune, roll beat, MIDI root), the preset slot, and how the
+// switches and Panic itself behave.
 bool PanicKeeps(int p) {
   switch (p) {
     case P_PAD_LEVEL: case P_PAD_TUNE: case P_PAD_ROLL: case P_PAD_ROOT: case P_PAD_SEL: case P_ENV_A: case P_ENV_D:
     case P_ENV_S: case P_ENV_R: case P_PAD_SOUND: case P_PAD_FILE: case P_PRESET_SLOT: case P_PRESET_INFO:
+    case P_SWITCH_MODE: case P_PANIC_RECALL:
       return true;
   }
   return false;
 }
 
 // Every effect parameter back to its default (the knobs follow through display_rev), every tail cleared, every pad
-// and roll stopped. Release is switched off at once.
-void Panic(Instance* s) {
+// and roll stopped. Release and the Kills are switched off. Runs while the output is the dry input (see PanicStep).
+void PanicReset(Instance* s) {
   for (int p = 0; p < P_COUNT; ++p) {
     s->trig_pending[p] = 0;
     if (PanicKeeps(p) || kParamDefs[p].kind == K_TRIGGER) continue;
     s->param[p] = s->smooth[p] = kParamDefs[p].def;
   }
-  s->kill_amt = 0.0f;
-  s->midi_release = s->midi_kill_toggle = 0;
+  s->midi_release = 0;
+  for (int i = 0; i < 4; ++i) s->midi_sw[i] = 0;
   s->scene_latched_off = false;
   s->iso.Init();
   s->filter.Init();
   s->echo.StartClear();
   s->tape.Stop();
   s->noise.Clear();
-  s->duck_env = 0.0f;
-  s->limiter.Init();
+  s->duck_env = 0.0f;   // the limiter keeps running: resetting its look-ahead would drop samples
   for (int i = 0; i < kNumReverbs; ++i) kReverbs[i]->mute(s->rv[i]);
   s->rv_running = false;
   s->rv_tail = 0;
@@ -822,20 +858,74 @@ void Panic(Instance* s) {
   ++s->display_rev;
 }
 
+// Panic (1.3). The old Panic reset everything while the signal was running, which clicked (filters, tails and
+// levels all jumped at once). Now the output crossfades to the dry input over 5 ms (phase 1; the sound keeps passing),
+// everything is reset behind it, the chosen preset is recalled if Panic Recall asks for one (Last Used or a slot; Factory
+// otherwise, or if the slot is empty; phase 2), and the reset chain crossfades back in (phase 3). preset_applied: a
+// preset was applied just now.
+void PanicStep(Instance* s, bool preset_applied) {
+  switch (s->panic_phase) {
+    case 1:
+      if (s->kill_amt < 1.0f) break;   // wait until the output is the dry input
+      PanicReset(s);
+      {
+        int want = Clamp(Option(s, P_PANIC_RECALL), 0, kPresetSlots + 1);
+        int slot = want == 1 ? s->last_slot : (want >= 2 ? want - 2 : -1);
+        if (slot >= 0 && slot < kPresetSlots && ((s->slot_used >> slot) & 1u)) {
+          s->panic_slot = slot;
+          s->panic_wait = kPanicLoadWait;
+          s->panic_requested = false;
+          s->panic_phase = 2;
+        } else {
+          s->panic_phase = 3;   // Factory, nothing used yet, or an empty slot
+        }
+      }
+      break;
+    case 2:
+      if (!s->panic_requested && pthread_mutex_trylock(&s->preset_mutex) == 0) {   // never wait on the worker here
+        s->load_slot = s->panic_slot;
+        s->last_slot = s->panic_slot;
+        pthread_mutex_unlock(&s->preset_mutex);
+        s->panic_requested = true;
+        SetPresetStatus(s, s->panic_slot, 0);
+      }
+      if (preset_applied) {
+        for (int p = 0; p < P_COUNT; ++p) s->smooth[p] = s->param[p];   // the output is dry: no need to glide
+        s->panic_phase = 3;
+      } else if (s->panic_requested && s->preset_status == 4 && s->status_slot == s->panic_slot) {
+        s->panic_phase = 3;   // the file is gone: Factory settings stand
+      } else if (--s->panic_wait <= 0) {
+        s->panic_phase = 3;
+      }
+      break;
+    case 3:
+      if (s->kill_amt <= 0.0f) s->panic_phase = 0;
+      break;
+  }
+}
+
 void ProcessSub(Instance* s, const int16_t* in, int16_t* out, int n) {
-  if (TakeTrigger(s, P_PANIC)) Panic(s);
+  if (TakeTrigger(s, P_PANIC) && s->panic_phase == 0) { s->panic_phase = 1; s->pads.FastReleaseAll(); }
 
   // ---- a preset the worker read
   char* preset = __atomic_exchange_n(&s->loaded_text, (char*)NULL, __ATOMIC_ACQ_REL);
+  bool preset_applied = preset != NULL;
   if (preset) {
     LoadState(s, preset, true);
     free(__atomic_exchange_n(&s->retired_text, preset, __ATOMIC_ACQ_REL));   // the worker frees it (rarely us)
     SetPresetStatus(s, s->loaded_slot, 2);
   }
-  if (s->midi_kill_toggle) {
-    s->midi_kill_toggle = 0;
-    s->param[P_RELEASE] = Option(s, P_RELEASE) ? 0.0f : 1.0f;
-    ++s->display_rev;
+  PanicStep(s, preset_applied);
+  {   // MIDI to Release / Kill Low / Mid / High: each note flips (Toggle), or holds the switch on (Momentary)
+    static const int kSwitchParams[4] = { P_RELEASE, P_KILL_LOW, P_KILL_MID, P_KILL_HIGH };
+    for (int i = 0; i < 4; ++i) {
+      int m = s->midi_sw[i];
+      if (!m) continue;
+      s->midi_sw[i] = 0;
+      int p = kSwitchParams[i];
+      s->param[p] = m == 1 ? (Option(s, p) ? 0.0f : 1.0f) : (m == 2 ? 1.0f : 0.0f);
+      ++s->display_rev;
+    }
   }
 
   UpdateSmoothing(s);
@@ -885,8 +975,12 @@ void ProcessSub(Instance* s, const int16_t* in, int16_t* out, int n) {
 
   // ---- isolator
   s->iso.SetFreqs(s->smooth[P_ISO_LO_FREQ], s->smooth[P_ISO_HI_FREQ]);
-  s->iso.Process(l, r, n, rfx::IsoGain(s->smooth[P_ISO_LOW]), rfx::IsoGain(s->smooth[P_ISO_MID]),
-                 rfx::IsoGain(s->smooth[P_ISO_HIGH]));
+  // Kill Low / Mid / High (1.3) take their band to zero; the isolator ramps the gain over the sub-block (0.7 ms), so it
+  // is instant to the ear and doesn't click.
+  s->iso.Process(l, r, n,
+                 Option(s, P_KILL_LOW) ? 0.0f : rfx::IsoGain(s->smooth[P_ISO_LOW]),
+                 Option(s, P_KILL_MID) ? 0.0f : rfx::IsoGain(s->smooth[P_ISO_MID]),
+                 Option(s, P_KILL_HIGH) ? 0.0f : rfx::IsoGain(s->smooth[P_ISO_HIGH]));
 
   // ---- filter + scene sweeps
   float lpf, hpf;
@@ -1028,9 +1122,12 @@ void ProcessSub(Instance* s, const int16_t* in, int16_t* out, int n) {
   s->tape.Process(l, r, n);
 
   // ---- Release (kill): crossfade the effect chain to the dry input. Hard: 5 ms (no click), Smooth: Release Beats.
-  float kill_target = Option(s, P_RELEASE) ? 1.0f : 0.0f;
+  // Panic (1.3) uses the same crossfade: the output goes to the dry input in 5 ms, everything resets behind it, and the
+  // reset chain fades back in. The sound never stops and nothing is added to it.
+  bool panic_dry = s->panic_phase == 1 || s->panic_phase == 2;
+  float kill_target = (Option(s, P_RELEASE) || panic_dry) ? 1.0f : 0.0f;
   if (s->kill_amt != kill_target || kill_target > 0.0f) {
-    float ramp = Option(s, P_KILL_MODE) ? kReleaseBeats[Clamp(Option(s, P_RELEASE_LEN), 0, 3)] * BeatSamples(s) : 220.5f;
+    float ramp = (Option(s, P_KILL_MODE) && !s->panic_phase) ? kReleaseBeats[Clamp(Option(s, P_RELEASE_LEN), 0, 3)] * BeatSamples(s) : 220.5f;
     float step = 1.0f / fmaxf(ramp, 1.0f);
     for (int i = 0; i < n; ++i) {
       s->kill_amt = kill_target > s->kill_amt ? fminf(kill_target, s->kill_amt + step) : fmaxf(kill_target, s->kill_amt - step);

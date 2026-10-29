@@ -21,7 +21,8 @@ Notes from MIDI Root:
     +4 .. +7   Pads 1-4 as rolls while held (Roll Beat, tempo-locked)
     +8         Release FX (Echo Out / Vinyl Brake / Backspin)
     +9         Release on / off (kill to dry)
-    +10        Panic (factory settings, tails cleared, pad setup kept)
+    +10        Panic (crossfades to dry, resets to defaults, back in; pad setup kept)
+    +11 .. +13 Kill Low / Mid / High (each note switches it)
 
 Nothing happens? The port number changes when the plugin is removed and inserted again (re-select it on the MIDI track),
 and only notes from MIDI Root to MIDI Root + 10 do something.

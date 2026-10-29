@@ -3,14 +3,14 @@
   "params": [
     {
       "key": "build_up",
-      "name": "Build Up",
+      "name": "Build",
       "min": 0.0,
       "max": 1.0,
       "default": 0.0
     },
     {
       "key": "break_down",
-      "name": "Break Down",
+      "name": "Break",
       "min": 0.0,
       "max": 1.0,
       "default": 0.0
@@ -25,7 +25,7 @@
     },
     {
       "key": "filter_res",
-      "name": "Resonance",
+      "name": "Res",
       "min": 0.0,
       "max": 1.0,
       "default": 0.25,
@@ -112,7 +112,7 @@
     },
     {
       "key": "echo_fb",
-      "name": "Echo Feedback",
+      "name": "Fdback",
       "min": 0.0,
       "max": 1.0,
       "default": 0.45
@@ -222,7 +222,7 @@
     },
     {
       "key": "cl_feedback",
-      "name": "Feedback",
+      "name": "Fdback",
       "min": 0.0,
       "max": 1.0,
       "default": 0.0,
@@ -230,7 +230,7 @@
     },
     {
       "key": "cl_reverb",
-      "name": "Cloud Verb",
+      "name": "Cl Verb",
       "min": 0.0,
       "max": 1.0,
       "default": 0.0,
@@ -296,7 +296,7 @@
     },
     {
       "key": "rv_send",
-      "name": "Reverb",
+      "name": "Verb",
       "min": 0.0,
       "max": 1.0,
       "default": 0.0
@@ -386,14 +386,14 @@
     },
     {
       "key": "pad_level",
-      "name": "Pad Level",
+      "name": "Pad Lvl",
       "min": 0.0,
       "max": 1.0,
       "default": 0.7
     },
     {
       "key": "pad_tune",
-      "name": "Pad Tune",
+      "name": "Pad Tun",
       "min": -12.0,
       "max": 12.0,
       "default": 0.0,
@@ -424,7 +424,7 @@
     },
     {
       "key": "iso_lo_freq",
-      "name": "Low/Mid Xover",
+      "name": "Lo Xov",
       "min": 50.0,
       "max": 500.0,
       "default": 246.0,
@@ -433,7 +433,7 @@
     },
     {
       "key": "iso_hi_freq",
-      "name": "Mid/High Xover",
+      "name": "Hi Xov",
       "min": 1000.0,
       "max": 8000.0,
       "default": 2484.0,
@@ -442,7 +442,7 @@
     },
     {
       "key": "build_hpf",
-      "name": "Build HPF Max",
+      "name": "Bld HPF",
       "min": 200.0,
       "max": 4000.0,
       "default": 1500.0,
@@ -451,7 +451,7 @@
     },
     {
       "key": "break_lpf",
-      "name": "Break LPF Min",
+      "name": "Brk LPF",
       "min": 80.0,
       "max": 2000.0,
       "default": 300.0,
@@ -460,7 +460,7 @@
     },
     {
       "key": "lim_drive",
-      "name": "Limiter Drive",
+      "name": "Lim Drv",
       "min": 0.0,
       "max": 18.0,
       "default": 0.0,
@@ -627,7 +627,7 @@
     },
     {
       "key": "noise_tune",
-      "name": "Riser Tune",
+      "name": "Rise T",
       "min": -24.0,
       "max": 24.0,
       "default": 0.0,
@@ -636,7 +636,7 @@
     },
     {
       "key": "noise_mod",
-      "name": "Riser Duck",
+      "name": "Rise D",
       "min": 0.0,
       "max": 1.0,
       "default": 0.0,
@@ -691,6 +691,69 @@
       "max": 1.0,
       "default": 0.0,
       "dynamic_display": true
+    },
+    {
+      "key": "kill_low",
+      "name": "Kill Low",
+      "options": [
+        "Off",
+        "On"
+      ],
+      "default": 0
+    },
+    {
+      "key": "kill_mid",
+      "name": "Kill Mid",
+      "options": [
+        "Off",
+        "On"
+      ],
+      "default": 0
+    },
+    {
+      "key": "kill_high",
+      "name": "Kill High",
+      "options": [
+        "Off",
+        "On"
+      ],
+      "default": 0
+    },
+    {
+      "key": "switch_mode",
+      "name": "Switch Mode",
+      "options": [
+        "Toggle",
+        "Momentary"
+      ],
+      "default": 0,
+      "qlink_ticks": 3
+    },
+    {
+      "key": "panic_recall",
+      "name": "Panic Recall",
+      "options": [
+        "Factory",
+        "Last Used",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16"
+      ],
+      "default": 0,
+      "qlink_ticks": 3
     }
   ],
   "sections": [
@@ -817,6 +880,16 @@
         "preset_save",
         "preset_load",
         "preset_info"
+      ]
+    },
+    {
+      "label": "Kills / Panic",
+      "keys": [
+        "kill_low",
+        "kill_mid",
+        "kill_high",
+        "switch_mode",
+        "panic_recall"
       ]
     }
   ]

@@ -20,7 +20,8 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 ART = os.path.join(ROOT, "art")
 FRAMES = 128
 PAGE = (0, 0, 0)          # layout.conf theme_panel: the strips are opaque, drawn on the page colour
-MAIN_RADIUS = 55          # radius >= this -> BLACK (layout.conf: main knobs r=56, others r=54). r=59 (a 16384 px strip) drifted on a Force (1.2.0): stay at r <= 56 (15616 px, verified in 1.1.1)
+TICK_DOT_IN = 28.0        # inner radius of the tick dots in art/knob_tick.png (80 px): the ring runs 28..38.4
+MAIN_RADIUS = 58          # radius >= this -> BLACK (layout.conf: main knobs r=58, others r=57). r=59 (a 16384 px strip) drifted on a Force (1.2.0): r=58 (16128 px) is the largest used (Meta4MPCXXL's biggest); 1.1.1 verified r=56 (15616 px)
 
 
 def body_radius(strip, size):
@@ -30,6 +31,17 @@ def body_radius(strip, size):
     ys, xs = np.nonzero(a > 200)
     c = (size - 1) / 2.0
     return float(np.max(np.hypot(xs - c, ys - c)))
+
+
+def bezel_radius(strip, size):
+    """Radius of the knob's round bezel (the lower half of the middle frame, where the pointer isn't): the pointer
+    sticks out past it, so body_radius() alone makes the bezel about 12 % smaller than the room it has."""
+    mid = strip.crop((0, 50 * size, size, 51 * size))
+    a = np.array(mid)[:, :, 3]
+    ys, xs = np.nonzero(a > 200)
+    c = (size - 1) / 2.0
+    low = ys >= c
+    return float(np.max(np.hypot(xs[low] - c, ys[low] - c)))
 
 
 def tick_inner_radius(tick):
@@ -56,8 +68,10 @@ def build(path, radius):
     t_scale = (frame / 2.0 - 1.0) / t_out
     tick_px = max(1, int(round(tick.size[0] * t_scale)))
     tick_img = tick.resize((tick_px, tick_px), Image.LANCZOS)
-    knob_r = t_in * t_scale - 1.5
-    k_scale = knob_r / body_radius(strip, src)
+    # 1.3: the bezel (not the pointer tip) reaches the inside of the tick dots, so the knob is as big as the frame
+    # allows (the frame is capped at r=58 by MPC's filmstrip limit). The dots sit between TICK_DOT_IN and the outer edge.
+    knob_r = TICK_DOT_IN * t_scale - 2.0
+    k_scale = knob_r / bezel_radius(strip, src)
     knob_px = max(1, int(round(src * k_scale)))
 
     out = Image.new("RGB", (frame, frame * FRAMES), PAGE)

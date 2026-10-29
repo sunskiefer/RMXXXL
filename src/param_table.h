@@ -80,6 +80,11 @@ enum ParamId {
   P_PRESET_SAVE,
   P_PRESET_LOAD,
   P_PRESET_INFO,
+  P_KILL_LOW,
+  P_KILL_MID,
+  P_KILL_HIGH,
+  P_SWITCH_MODE,
+  P_PANIC_RECALL,
   P_COUNT
 };
 
@@ -159,4 +164,9 @@ static const ParamDef kParamDefs[P_COUNT] = {
   { "preset_save", 0.0f, 1.0f, 0.0f, K_TRIGGER, 0 },
   { "preset_load", 0.0f, 1.0f, 0.0f, K_TRIGGER, 0 },
   { "preset_info", 0.0f, 1.0f, 0.0f, K_CONT, 0 },
+  { "kill_low", 0.0f, 1.0f, 0.0f, K_OPTION, 2 },
+  { "kill_mid", 0.0f, 1.0f, 0.0f, K_OPTION, 2 },
+  { "kill_high", 0.0f, 1.0f, 0.0f, K_OPTION, 2 },
+  { "switch_mode", 0.0f, 1.0f, 0.0f, K_OPTION, 2 },
+  { "panic_recall", 0.0f, 17.0f, 0.0f, K_OPTION, 18 },
 };

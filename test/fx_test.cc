@@ -420,7 +420,7 @@ int main() {
     check(fabs(dry_again - dry1k) < 0.02, "after Panic the signal passes dry", dry_again);
     set(d, "pad_level", 0.7); set(d, "lim_ceiling", 0);
     note(d, 36 + 10, 100); note(d, 46, 0);   // root + 10 = Panic, from MIDI too
-    run(d, sig, 2, -1);
+    run(d, sig, 8, -1);   // 1.3: Panic crossfades to dry (5 ms) before it resets
     E->get_param(d, "lim_ceiling", buf, sizeof buf);
     check(fabs(atof(buf) + 0.3) < 1e-6, "MIDI note root + 10 is Panic", atof(buf));
     set(d, "lim_ceiling", 0);

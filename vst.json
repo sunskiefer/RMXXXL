@@ -2,7 +2,7 @@
   "name": "RMXXXL",
   "vendor": "L'Cronx",
   "uid": "AnRx",
-  "version": 1202,
+  "version": 1300,
   "so": "rmxxxl.so",
   "params": "params.json",
   "effect": true,

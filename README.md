@@ -1,4 +1,4 @@
-# RMXXXL v1.2.1
+# RMXXXL v1.3.0
 
 **An RMX-1000-style remix effect that runs natively inside MPC OS on the Akai Force.**
 
@@ -8,8 +8,8 @@ filter sweeps, band kills, echoes, reverb washes, granular textures, drum and sa
 drops everything back to dry, and a Panic button. Everything sits in one insert slot, with its own touchscreen pages and Q-Link sets.
 
 > [!NOTE]
-> **Status: 1.2.1, tested on an Akai Force** (MPC OS 3.9.1 with MockbaMod). It fixes what the 1.1.1 test found (see
-> the [changelog](CHANGELOG.md)) and passes the full test suite on x86 (ASan + UBSan). Report anything odd under
+> **Status: 1.3.0, tested on an Akai Force** (MPC OS 3.9.1 with MockbaMod). It adds the EQ Kills, a clean Panic and
+> bigger knobs and text (see the [changelog](CHANGELOG.md)) and passes the full test suite on x86 (ASan + UBSan). Report anything odd under
 > [Issues](../../issues).
 
 ![The REMIX page](docs/img/remix.png)
@@ -21,12 +21,15 @@ drops everything back to dry, and a Panic button. Everything sits in one insert 
 - **Scene FX:** Build Up and Break Down are one knob each, moving the filter, echo, Clouds, reverb and a noise
   riser together. Release latches them off until both knobs are back at zero, like the RMX.
 - **Isolator:** 3-band Linkwitz-Riley 8th-order kill EQ with Mixxx's design and crossovers (246 Hz / 2.48 kHz).
+- **EQ Kills:** Kill Low, Kill Mid and Kill High buttons under the isolator knobs cut a band to zero at once (tap on,
+  tap again off), also from MIDI and automation.
 - **DJ filter:** one bipolar knob, low-pass to the left, high-pass to the right, with resonance.
 - **Echo:** synced to the MPC tempo, 1/16 to 1 bar, damped feedback.
 - **Release:** a kill switch. On, the whole effect goes to the dry input (Hard: instant, Smooth: a fade over 1/2 to 4
   beats) and stays there; off, everything comes back as it was. No knob moves.
 - **Release FX:** Echo Out, Vinyl Brake or Backspin over 1/2, 1, 2 or 4 beats, on its own button.
-- **Panic:** one tap back to factory settings, every tail cleared; your pad setup stays.
+- **Panic:** one tap back to factory settings, every tail cleared; your pad setup stays. The sound keeps passing: the
+  effects crossfade out and back in over 5 ms, so there is no click.
 - **Presets:** 16 slots of your own, saved on the device, pad sounds and envelopes included.
 - **Clouds:** Mutable Instruments Clouds with the Parasites firmware, all six modes (granular, stretch, looping
   delay, spectral, Oliverb, Resonestor).

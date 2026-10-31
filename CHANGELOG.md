@@ -16,7 +16,7 @@ Asked for in a GitHub issue (benja0496-cmd), plus the bigger knobs and text.
   controller button while it is held) and Panic Recall (Factory, Last Used or a preset slot). Both default to the old
   behaviour. The plugin cannot see the MPC's Shift key, so a Shift-held momentary mode is not built.
 - Parameters are appended (80 now) and four are renamed to the shortened names; saved projects keep their values.
-  Not tested on a device yet.
+  Tested on an Akai Force (MPC OS 3.9.1 with MockbaMod).
 
 ## 1.2.3
 - Built on the latest wrapper and includes the Q-Link and automation fix (mpc-vst-plugins #486-#489): Q-Links now

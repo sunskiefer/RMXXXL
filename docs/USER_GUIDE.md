@@ -6,7 +6,7 @@ RMXXXL v.1 by L'Cronx is a performance remix effect in the spirit of the Pioneer
 
 Put it on a track, a submix or the master, and play the mix live with big macro moves: build-ups, breakdowns, filter sweeps, band kills, echoes, reverb washes, granular textures, drum and sample hits and a release button that snaps everything back.
 
-Status: version 1.2.1, tested on an Akai Force (MPC OS 3.9.1 with MockbaMod). It fixes what the 1.1.1 test found and passes the offline tests. The other Gen1 units are untested.
+Status: version 1.3.0, tested on an Akai Force (MPC OS 3.9.1 with MockbaMod). It adds the EQ Kills, a clean Panic and bigger knobs and text, and passes the offline tests. The other Gen1 units are untested.
 
 **Signal flow**, in order:
 
@@ -73,11 +73,14 @@ Each page has a top row and a bottom row of controls. Turn knobs on the touchscr
 | Release (ON / OFF) | The kill switch. **On**: the whole effect goes to the dry input and stays dry. **Off**: the effects come back exactly as they were. It never moves a knob |
 | Hard / Smooth | How Release switches. **Hard**: an instant cut (5 ms, no click). **Smooth**: a fade over **Beats**, both ways |
 | Low / Mid / High | Isolator bands. Fully left = Kill, centre = unchanged, fully right = +6 dB |
+| Kill Low / Kill Mid / Kill High (buttons) | Under the Low / Mid / High knobs. Cut that band to zero at once; tap to switch on, tap again to switch off. The knob stays where it is. They are ordinary parameters, so they work with automation and MIDI (below) |
 | Release FX (list) | Echo Out (repeats the last echo beat and fades), Brake (vinyl stop) or Backspin |
 | Beats | Length of the Release FX and of a Smooth Release: 1/2, 1, 2 or 4 beats |
 | RELEASE FX (button) | Fires the selected Release FX |
 | PANIC | Back to factory settings at once (see below) |
 | Feedback | Echo feedback; Build Up and Break Down add more on top |
+
+On the screen some knob names are shortened to fit the larger text: Build Up is **BUILD**, Break Down is **BREAK**, Resonance is **RES**, Feedback is **FDBACK** and Reverb is **VERB**. Other pages use the same kind of short names (CL VERB, PAD LVL, PAD TUN, LO XOV, HI XOV, BLD HPF, BRK LPF, LIM DRV, RISE T, RISE D). They are the same controls as described here.
 
 The lower half is one panel of big buttons: **Echo Beat** (1/16 to 1 bar), **Release FX** and **Beats**, then the
 **RELEASE FX** and **PANIC** buttons. The riser's Noise amount, Tune and Duck are on SETUP (and Noise on a REMIX Q-Link).
@@ -86,7 +89,7 @@ While Release is on, the effects keep running underneath (echoes keep repeating,
 
 After the **RELEASE FX** button, Build Up and Break Down are latched off, like the RMX snapping back to dry. Turn both knobs back to zero to re-arm them.
 
-**PANIC** puts every effect control back to its factory value (as a freshly installed RMXXXL, whatever the project saved), switches Release off, stops the pads and rolls, and clears every echo, reverb and release tail. Your pad setup stays: each pad's sound and envelope, Pad Level, Pad Tune, Roll Beat and MIDI Root, and the preset slot.
+**PANIC** puts every effect control back to its factory value (as a freshly installed RMXXXL, whatever the project saved), switches Release off, stops the pads and rolls, and clears every echo, reverb and release tail. It is clean: the effects crossfade out to the dry signal in 5 ms, everything resets behind it, and the effects fade back in over 5 ms, so the sound keeps passing the whole time and the limiter keeps running. Your pad setup stays: each pad's sound and envelope, Pad Level, Pad Tune, Roll Beat and MIDI Root, and the preset slot.
 
 ### CLOUDS
 
